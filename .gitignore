@@ -5,6 +5,7 @@ aml-case-processor/
     reports/
     uploads/
     requirements.txt
+    .env
   frontend/
     app/
     .next/
