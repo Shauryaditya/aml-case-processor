@@ -1,0 +1,10 @@
+{
+  "id": "atm_structuring_case_01",
+  "input_file": "atm_structuring_case_01.csv",
+  "description": "Repeated ATM withdrawals just below threshold",
+  "expected_patterns": [
+    "ATM_STRUCTURING_WITHDRAWALS"
+  ],
+  "expected_risk_band": "Medium",
+  "expected_recommendation": "Review"
+}

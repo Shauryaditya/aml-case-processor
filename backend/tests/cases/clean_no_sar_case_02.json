@@ -1,0 +1,8 @@
+{
+  "id": "clean_no_sar_case_02",
+  "input_file": "clean_no_sar_case_02.csv",
+  "description": "Student account with small routine transactions, no SAR expected",
+  "expected_patterns": [],
+  "expected_risk_band": "Low",
+  "expected_recommendation": "No SAR"
+}

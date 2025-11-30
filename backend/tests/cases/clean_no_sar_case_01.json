@@ -1,0 +1,8 @@
+{
+  "id": "clean_no_sar_case_01",
+  "input_file": "clean_no_sar_case_01.csv",
+  "description": "Normal payroll and bill payments, no SAR expected",
+  "expected_patterns": [],
+  "expected_risk_band": "Low",
+  "expected_recommendation": "No SAR"
+}

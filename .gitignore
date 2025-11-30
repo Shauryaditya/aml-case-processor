@@ -1,0 +1,12 @@
+aml-case-processor/
+  backend/
+    app/
+    .venv/
+    reports/
+    uploads/
+    requirements.txt
+  frontend/
+    app/
+    .next/
+    node_modules/
+    .env.local

@@ -1,0 +1,12 @@
+{
+  "id": "mixed_activity_case_1",
+  "input_file": "mixed_activity_case_1.csv",
+  "description": "Near-threshold cash, same-day wire, and P2P burst",
+  "expected_patterns": [
+    "STRUCTURING_NEAR_THRESHOLD_CASH",
+    "RAPID_CASH_TO_WIRE",
+    "P2P_MULTIPLE_TRANSFERS_SAME_DAY"
+  ],
+  "expected_risk_band": "High",
+  "expected_recommendation": "SAR"
+}

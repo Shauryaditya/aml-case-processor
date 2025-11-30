@@ -1,0 +1,10 @@
+{
+  "id": "high_risk_wire_case_01",
+  "input_file": "high_risk_wire_case_01.csv",
+  "description": "Wire transfer referencing a high-risk jurisdiction",
+  "expected_patterns": [
+    "HIGH_RISK_JURISDICTION_WIRE"
+  ],
+  "expected_risk_band": "High",
+  "expected_recommendation": "SAR"
+}

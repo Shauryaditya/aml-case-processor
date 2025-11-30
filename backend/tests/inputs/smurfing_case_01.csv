@@ -1,0 +1,6 @@
+Date,amount,Type,Details
+2025-03-01,500,P2P,Incoming from user_A
+2025-03-01,450,P2P,Incoming from user_B
+2025-03-01,480,P2P,Incoming from user_C
+2025-03-01,520,P2P,Incoming from user_D
+2025-03-02,510,P2P,Incoming from user_E

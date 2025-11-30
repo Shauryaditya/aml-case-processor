@@ -1,0 +1,10 @@
+{
+  "id": "smurfing_case_01",
+  "input_file": "smurfing_case_01.csv",
+  "description": "Multiple small inbound P2P credits from different senders (smurfing behavior)",
+  "expected_patterns": [
+    "SMURFING_P2P_INBOUND"
+  ],
+  "expected_risk_band": "High",
+  "expected_recommendation": "SAR"
+}

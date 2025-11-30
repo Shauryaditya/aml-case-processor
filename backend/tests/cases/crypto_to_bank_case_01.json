@@ -1,0 +1,10 @@
+{
+  "id": "crypto_to_bank_case_01",
+  "input_file": "crypto_to_bank_case_01.csv",
+  "description": "Crypto exchange deposits followed by outbound transfers",
+  "expected_patterns": [
+    "CRYPTO_TO_BANK_FLOW"
+  ],
+  "expected_risk_band": "High",
+  "expected_recommendation": "SAR"
+}

@@ -1,0 +1,32 @@
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Data parsing
+pandas
+openpyxl
+pdfplumber
+pdfminer.six
+python-dateutil
+numpy
+
+# PDF generation
+reportlab
+
+# Database + ORM
+sqlmodel
+alembic
+asyncpg
+
+# Environment variables
+python-dotenv
+
+# Cloud / Object storage
+boto3
+
+# Redis + Background Jobs
+redis
+dramatiq
+
+# HTTP (if calling external APIs / LLMs)
+requests

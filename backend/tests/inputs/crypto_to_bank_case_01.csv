@@ -1,0 +1,4 @@
+Date,amount,Type,Details
+2025-04-01,12000,Deposit,Incoming from CryptoExchange XYZ
+2025-04-02,11500,Wire,Wire to personal account at another bank
+2025-04-02,500,P2P,Transfer to third party
