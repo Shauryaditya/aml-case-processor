@@ -11,7 +11,7 @@ app = FastAPI(title="AML Case Processor")
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://aml-case-processor.vercel.app/"
+    "https://aml-case-processor.vercel.app"
 ]
 
 app.add_middleware(
