@@ -14,7 +14,7 @@ export default function Home() {
   const [jobId, setJobId] = useState<string | null>(null);
 
   const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
   const processCase = async () => {
     if (!file) return;
