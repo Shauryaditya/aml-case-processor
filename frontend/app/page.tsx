@@ -175,7 +175,10 @@ export default function Home() {
             ) : (
               <>
                 {/* Summary */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="">
+                 <div className="text-sm text-gray-500">Job: {jobId ?? "-"}</div>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">  
                   <div className="flex items-center gap-3">
                     <div className={`px-3 py-1 rounded-full ${getRiskColor(result.risk_band)}`}>
                       {result.risk_band || "Unknown"}
@@ -187,8 +190,6 @@ export default function Home() {
                       Recommendation: <span className="font-medium">{result.final_recommendation ?? "-"}</span>
                     </div>
                   </div>
-
-                  <div className="text-sm text-gray-500">Job: {jobId ?? "-"}</div>
                 </div>
 
                 {/* Patterns */}
