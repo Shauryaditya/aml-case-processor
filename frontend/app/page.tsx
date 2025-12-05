@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import TransactionTable from "@/components/_components/TransactionTable";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -52,7 +54,8 @@ export default function Home() {
 
         const statusJson = await statusRes.json();
 
-        if (statusJson.error) throw new Error(statusJson.error || "Backend error");
+        if (statusJson.error)
+          throw new Error(statusJson.error || "Backend error");
 
         const st = statusJson.status;
         if (st === "done") {
@@ -102,8 +105,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto text-center mb-8">
         <h1 className="text-4xl font-bold">AML Case Processor</h1>
         <p className="text-gray-700 mt-3 max-w-2xl mx-auto">
-          Upload a transaction file and instantly generate AML red flags,
-          risk scoring, and a SAR-ready narrative.
+ Upload a case file and instantly detect AML patterns, risk scoring, and a SAR-ready narrative.
         </p>
         <p className="text-sm text-gray-500 mt-2">Supports CSV, XLSX, PDF.</p>
       </div>
@@ -155,8 +157,8 @@ export default function Home() {
             )}
 
             <div className="mt-2 text-xs text-gray-400">
-              Data Privacy: Uploaded files are processed for analysis and are not
-              stored or used to train models.
+              Data Privacy: Uploaded files are processed for analysis and are
+              not stored or used to train models.
             </div>
           </CardContent>
         </Card>
@@ -167,7 +169,14 @@ export default function Home() {
             <CardTitle>Case Results</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!result ? (
+            {isProcessing ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                <div className="text-sm text-gray-600">
+                  {progressText || "Processing..."}
+                </div>
+              </div>
+            ) : !result ? (
               <div className="text-sm text-gray-600">
                 No case processed yet. Upload a file and click “Process Case” to
                 see results.
@@ -176,29 +185,47 @@ export default function Home() {
               <>
                 {/* Summary */}
                 <div className="">
-                 <div className="text-sm text-gray-500">Job: {jobId ?? "-"}</div>
+                  <div className="text-sm text-gray-500">
+                    Job: {jobId ?? "-"}
+                  </div>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">  
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`px-3 py-1 rounded-full ${getRiskColor(result.risk_band)}`}>
+                    <div
+                      className={`px-3 py-1 rounded-full ${getRiskColor(
+                        result.risk_band
+                      )}`}
+                    >
                       {result.risk_band || "Unknown"}
                     </div>
                     <div className="text-xs text-gray-700">
-                      Risk score: <span className="font-medium">{result.risk_score ?? "-"}</span> / 10
+                      Risk score:{" "}
+                      <span className="font-medium">
+                        {result.risk_score ?? "-"}
+                      </span>{" "}
+                      / 10
                     </div>
                     <div className="text-xs text-gray-700">
-                      Recommendation: <span className="font-medium">{result.final_recommendation ?? "-"}</span>
+                      Recommendation:{" "}
+                      <span className="font-medium">
+                        {result.final_recommendation ?? "-"}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Patterns */}
                 <div>
-                  <div className="text-sm font-medium mb-2">Detected patterns:</div>
+                  <div className="text-sm font-medium mb-2">
+                    Detected patterns:
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {result.patterns?.length ? (
                       result.patterns.map((p: any, i: number) => (
-                        <div key={i} className="text-xs px-2 py-1 bg-gray-100 rounded">
+                        <div
+                          key={i}
+                          className="text-xs px-2 py-1 bg-gray-100 rounded"
+                        >
                           {p.name}
                         </div>
                       ))
@@ -209,48 +236,22 @@ export default function Home() {
                 </div>
 
                 {/* Transactions (compact) */}
-                <div>
-                  <div className="text-sm font-medium mb-2">Transactions (sample)</div>
-                  <div className="overflow-auto border rounded">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-50 text-left">
-                          <th className="p-2">Date</th>
-                          <th className="p-2">Amount</th>
-                          <th className="p-2">Type</th>
-                          <th className="p-2">Details</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.transactions?.slice(0, 10).map((t: any, idx: number) => (
-                          <tr key={idx} className="border-t">
-                            <td className="p-2 text-xs">{t.Date}</td>
-                            <td className="p-2 text-xs">{t.amount}</td>
-                            <td className="p-2 text-xs">{t.Type}</td>
-                            <td className="p-2 text-xs">{t.Details}</td>
-                          </tr>
-                        )) ?? (
-                          <tr>
-                            <td colSpan={4} className="p-2 text-sm text-gray-500">
-                              No transactions returned
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
 
+                <TransactionTable transactions={result.transactions} />
                 {/* SAR Narrative */}
                 <div>
-                  <div className="text-sm font-medium mb-2">SAR Narrative (Draft)</div>
+                  <div className="text-sm font-medium mb-2">
+                    SAR Narrative (Draft)
+                  </div>
                   <div className="border rounded p-2 bg-gray-50 max-h-40 overflow-auto text-sm whitespace-pre-wrap">
                     {result.sar_text || "No narrative returned"}
                   </div>
 
                   <div className="flex gap-2 mt-3">
                     <Button
-                      onClick={() => navigator.clipboard.writeText(result.sar_text || "")}
+                      onClick={() =>
+                        navigator.clipboard.writeText(result.sar_text || "")
+                      }
                     >
                       Copy Narrative
                     </Button>
@@ -259,7 +260,10 @@ export default function Home() {
                       variant="outline"
                       onClick={() => {
                         if (!jobId) return;
-                        window.open(`${backendUrl}/api/download/${jobId}`, "_blank");
+                        window.open(
+                          `${backendUrl}/api/download/${jobId}`,
+                          "_blank"
+                        );
                       }}
                     >
                       Download SAR PDF
