@@ -19,7 +19,13 @@ HIGH_RISK_KEYWORDS = [
     "highriskcountry",
     "sanctionedcountry",
     "xyz",               # synthetic example
-    "countryx",          # synthetic example
+    "countryx",
+    "hong kong",
+    "uae",
+    "dubai",
+    "china",
+    "offshore",
+    "foreign wire"
 ]
 
 
@@ -152,65 +158,61 @@ def run_patterns(transactions: List[Dict[str, Any]]):
         })
         risk_score += 3
 
-
-    # --- Pattern 4: Smurfing (Inbound P2P from many senders) ---
-    smurfing_hits: List[Dict[str, Any]] = []
-    for day, txs in by_day.items():
-        p2p_inbound = [
-            t for t in txs
-            if _get_type(t) == "p2p" and "incoming" in _get_details(t)
-        ]
-        if len(p2p_inbound) >= SMURFING_MIN_COUNT:
-            total_inbound = sum(_get_amount(t) for t in p2p_inbound)
-            if total_inbound >= SMURFING_MIN_TOTAL:
-                smurfing_hits.append({
-                    "date": str(day),
-                    "p2p_count": len(p2p_inbound),
-                    "total_amount": total_inbound,
-                    "transactions": p2p_inbound,
-                })
-
-    if smurfing_hits:
-        patterns.append({
-            "code": "SMURFING_P2P_INBOUND",
-            "name": "Smurfing via Inbound P2P",
-            "description": "Many small inbound P2P credits from multiple sources on the same day.",
-            "matches": smurfing_hits,
-        })
-        risk_score += 4
-
     # --- Pattern 5: Crypto-to-bank flow ---
     crypto_hits: List[Dict[str, Any]] = []
-    dated_txs = [(t, _get_date(t)) for t in transactions if _get_date(t) is not None]
-    crypto_deposits = [
-        (t, d) for (t, d) in dated_txs
-        if "cryptoexchange" in _get_details(t) or "coinbase" in _get_details(t)
+
+    CRYPTO_KEYWORDS = [
+        "cryptoexchange",
+        "crypto exchange",
+        "crypto",
+        "coinbase",
+        "kraken",
+        "binance",
+        "kucoin",
+        "okx",
+        "crypto.com"
     ]
 
+    # Extract all transactions with valid dates
+    dated_txs = [(t, _get_date(t)) for t in transactions if _get_date(t)]
+
+    # Identify inbound crypto-related deposits
+    crypto_deposits = []
+    for tx, d in dated_txs:
+        details = _get_details(tx)
+        if any(k in details for k in CRYPTO_KEYWORDS):
+            crypto_deposits.append((tx, d))
+
+    # Look for outbound flows (wire/P2P) within a 48-hour window
     for crypto_tx, crypto_date in crypto_deposits:
         related_outflows = []
+
         for t, d in dated_txs:
-            if d is None:
+            if not d:
                 continue
-            # +/- 1 day window
-            if abs((d - crypto_date).days) <= 1:
-                if _get_type(t) in ("wire", "p2p") and _get_amount(t) >= CRYPTO_MIN_OUTFLOW:
+
+            # Time window ±2 days
+            if abs((d - crypto_date).days) <= 2:
+                # outbound movement
+                if _get_type(t) in ("wire", "p2p", "ach") and _get_amount(t) >= CRYPTO_MIN_OUTFLOW:
                     related_outflows.append(t)
+
         if related_outflows:
             crypto_hits.append({
                 "crypto_deposit": crypto_tx,
                 "related_outflows": related_outflows,
+                "deposit_date": str(crypto_date)
             })
 
     if crypto_hits:
         patterns.append({
             "code": "CRYPTO_TO_BANK_FLOW",
             "name": "Crypto-to-Bank Flow",
-            "description": "Deposits from crypto exchanges followed by large outbound transfers.",
+            "description": "Inbound crypto exchange deposits followed by large outbound transfers within 48 hours.",
             "matches": crypto_hits,
         })
-        # Crypto-to-bank flows are inherently high-risk
         risk_score += 7
+
     # --- Pattern 6: High-risk jurisdiction wires ---
     high_risk_hits: List[Dict[str, Any]] = []
     for tx in transactions:
@@ -247,6 +249,271 @@ def run_patterns(transactions: List[Dict[str, Any]]):
             "matches": atm_struct_hits,
         })
         risk_score += 3
+
+
+    # --- Pattern 8: Rapid Outflow (generalized inflow → outflow drain) ---
+    rapid_outflow_hits = []
+
+    # define inbound + outbound categories
+    inbound_types = {"cash", "ach", "check"}
+    outbound_types = {"wire", "ach", "p2p"}
+
+    # collect all tx with dates
+    dated = [(tx, _get_date(tx)) for tx in transactions if _get_date(tx)]
+
+    for in_tx, in_date in dated:
+        in_type = _get_type(in_tx)
+        in_amt = _get_amount(in_tx)
+
+        # inbound criteria
+        if in_type not in inbound_types:
+            continue
+        if in_amt < 5000:
+            continue
+
+        # search for matching outbound within 24 hr window
+        for out_tx, out_date in dated:
+            out_type = _get_type(out_tx)
+            out_amt = _get_amount(out_tx)
+
+            if out_type not in outbound_types:
+                continue
+            if out_amt < 5000:
+                continue
+
+            # time window: same day or ±1 day
+            if abs((out_date - in_date).days) > 1:
+                continue
+
+            # net outflow rule: outbound ≥ 80% of inbound
+            if out_amt < in_amt * 0.80:
+                continue
+
+            rapid_outflow_hits.append({
+                "inbound": in_tx,
+                "outbound": out_tx,
+                "time_delta_days": (out_date - in_date).days
+            })
+
+    if rapid_outflow_hits:
+        patterns.append({
+            "code": "RAPID_OUTFLOW",
+            "name": "Rapid Outflow (Funds Drained After Inbound)",
+            "description": "Inbound funds followed by large outbound movement within 24 hours, meeting 80% outflow test.",
+            "matches": rapid_outflow_hits,
+        })
+        risk_score += 4
+
+    # --- Pattern: INBOUND SMURFING (multi small inbound credits) ---
+    inbound_smurf_hits = []
+
+    for day, txs in by_day.items():
+        inbound = []
+
+        for t in txs:
+            ttype = _get_type(t)
+            details = _get_details(t)
+
+            # inbound P2P recognition
+            if ttype == "cash" and _get_amount(t) < 10000:
+              inbound.append(t)
+
+            # inbound ACH credit
+            if ttype == "ach" and ("credit" in details or "incoming" in details):
+                inbound.append(t)
+
+            # inbound wire credit
+            if ttype == "wire" and ("incoming" in details or "credit" in details):
+                inbound.append(t)
+
+        # Now check smurfing conditions for THIS day
+        if len(inbound) >= 3:
+            total = sum(_get_amount(t) for t in inbound)
+
+            # original rule: amounts < 3000 AND total >= 5000
+            if all(_get_amount(t) < 3000 for t in inbound) and total >= 3000:
+                inbound_smurf_hits.append({
+                    "date": str(day),
+                    "transactions": inbound,
+                    "count": len(inbound),
+                    "total_amount": total,
+                })
+
+    # append pattern AFTER loop
+    if inbound_smurf_hits:
+        patterns.append({
+            "code": "INBOUND_SMURFING",
+            "name": "Inbound Smurfing (Funnel Behavior)",
+            "description": "Multiple small inbound transfers aggregated to avoid reporting thresholds.",
+            "matches": inbound_smurf_hits,
+        })
+        risk_score += 4
+
+
+    # --- Pattern 9: LAYERING_ACTIVITY ---
+    layering_hits = []
+
+    NORMAL_SPEND_KEYWORDS = {
+        "rent", "grocery", "groceries", "utility", "utilities",
+        "salary", "payroll", "insurance", "mortgage"
+    }
+
+    # prepare dated transactions
+    dated = [
+        (tx, _get_date(tx), _get_amount(tx), _get_type(tx), _get_details(tx))
+        for tx in transactions
+        if _get_date(tx) is not None
+    ]
+
+    # sort by time
+    dated.sort(key=lambda x: x[1])
+
+    for i, (start_tx, start_date, start_amt, start_type, start_details) in enumerate(dated):
+        # initial inbound only
+        if start_type not in {"cash", "ach", "check"}:
+            continue
+        if start_amt <= 0:
+            continue
+
+        window_end = start_date + timedelta(hours=48)
+
+        window = []
+        for tx, d, amt, ttype, details in dated[i:]:
+            if d > window_end:
+                break
+            window.append((tx, d, amt, ttype, details))
+
+        if len(window) < 3:
+            continue
+
+        # distinct transaction types
+        distinct_types = {t[3] for t in window}
+        if len(distinct_types) < 3:
+            continue
+
+        # exclude normal economic activity
+        if any(
+            any(keyword in t[4] for keyword in NORMAL_SPEND_KEYWORDS)
+            for t in window
+        ):
+            continue
+
+        # outbound hops
+        outbound = [
+            t for t in window
+            if t[3] in {"wire", "p2p", "ach"} and t[2] > 0
+        ]
+
+        if len(outbound) < 2:
+            continue
+
+        outbound_total = sum(t[2] for t in outbound)
+
+        if outbound_total < start_amt * 0.70:
+            continue
+
+        layering_hits.append({
+            "start_date": str(start_date),
+            "transaction_types": list(distinct_types),
+            "initial_inbound": start_tx,
+            "outbound_transactions": [t[0] for t in outbound],
+            "outbound_total": outbound_total,
+            "inbound_amount": start_amt,
+        })
+
+    if layering_hits:
+        patterns.append({
+            "code": "LAYERING_ACTIVITY",
+            "name": "Layering Activity",
+            "description": "Rapid movement of funds across multiple transaction types and hops, inconsistent with normal economic behavior.",
+            "matches": layering_hits,
+        })
+        risk_score += 6
+
+
+        # --- Pattern 10: FUNNELING_ACTIVITY ---
+    FUNNEL_MIN_COUNT = 4
+    FUNNEL_MIN_TOTAL = 10000.0
+    FUNNEL_RATIO = 0.80
+    FUNNEL_WINDOW_DAYS = 7
+
+    funnel_hits = []
+
+    # prepare dated txs
+    dated = [
+        (tx, _get_date(tx), _get_amount(tx), _get_type(tx), _get_details(tx))
+        for tx in transactions
+        if _get_date(tx) is not None
+    ]
+
+    dated.sort(key=lambda x: x[1])
+
+    for i, (tx, start_date, amt, ttype, details) in enumerate(dated):
+        # only inbound starters
+        if ttype not in {"p2p", "ach", "wire"}:
+            continue
+        if amt <= 0:
+            continue
+
+        window_end = start_date + timedelta(days=FUNNEL_WINDOW_DAYS)
+
+        inbound = []
+        outbound = []
+
+        for t, d, a, tp, det in dated[i:]:
+            if d > window_end:
+                break
+
+            # inbound
+            if tp in {"p2p", "ach", "wire"} and a > 0:
+                inbound.append((t, d, a, tp, det))
+
+            # outbound
+            if tp in {"wire", "p2p"} and a >= 1000:
+                outbound.append((t, d, a, tp, det))
+
+        if len(inbound) < FUNNEL_MIN_COUNT:
+            continue
+
+        inbound_total = sum(t[2] for t in inbound)
+        if inbound_total < FUNNEL_MIN_TOTAL:
+            continue
+
+        # infer distinct senders via Details text
+        senders = {t[4] for t in inbound}
+        if len(senders) < FUNNEL_MIN_COUNT:
+            continue
+
+        # group outbound by destination (details string)
+        outbound_by_dest = defaultdict(float)
+        for _, _, a, _, det in outbound:
+            outbound_by_dest[det] += a
+
+        if not outbound_by_dest:
+            continue
+
+        max_out = max(outbound_by_dest.values())
+        if max_out < inbound_total * FUNNEL_RATIO:
+            continue
+
+        funnel_hits.append({
+            "start_date": str(start_date),
+            "inbound_count": len(inbound),
+            "inbound_total": inbound_total,
+            "outbound_total": max_out,
+            "inbound_transactions": [t[0] for t in inbound],
+            "outbound_transactions": [t[0] for t in outbound],
+        })
+
+    if funnel_hits:
+        patterns.append({
+            "code": "FUNNELING_ACTIVITY",
+            "name": "Funneling Activity",
+            "description": "Funds aggregated from multiple sources and consolidated to a single outbound destination.",
+            "matches": funnel_hits,
+        })
+        risk_score += 5
+
 
     if risk_score <= 0:
         risk_score = 1
