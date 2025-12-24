@@ -54,7 +54,7 @@ def compute_final_recommendation(patterns, risk_score: int) -> str:
 def process_uploaded_file(job_id: str):
     JOB_STORE[job_id]["status"] = "parsing"
     file_path = JOB_STORE[job_id]["file"]
-
+    print("JOB STATUS UPDATE:", JOB_STORE[job_id]["status"])
     try:
         # 1) Parse transactions
         transactions = extract_transactions(file_path)
@@ -69,13 +69,14 @@ def process_uploaded_file(job_id: str):
 
         # 4) Generate SAR narrative via LLM
         JOB_STORE[job_id]["status"] = "llm"
+        print("Entering LLM stage")
         sar_text = generate_sar(
                           transactions,
                           patterns,
                           risk_score=risk_score,
                           risk_band=risk_band,
                     )
-
+        print("LLM completed")
         # 5) Generate PDF from SAR narrative
         JOB_STORE[job_id]["status"] = "pdf"
         pdf_path = make_pdf(job_id, sar_text)

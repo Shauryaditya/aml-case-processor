@@ -1,0 +1,5 @@
+Date,Amount,Type,Details
+2025-04-01,9800,Cash,Deposit
+2025-04-01,3200,P2P,Transfer to unknown recipient
+2025-04-02,6000,Wire,Outbound wire transfer
+2025-04-02,5500,ACH,External account transfer

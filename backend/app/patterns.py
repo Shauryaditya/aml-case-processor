@@ -250,7 +250,6 @@ def run_patterns(transactions: List[Dict[str, Any]]):
         })
         risk_score += 3
 
-
     # --- Pattern 8: Rapid Outflow (generalized inflow → outflow drain) ---
     rapid_outflow_hits = []
 
@@ -316,7 +315,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
 
             # inbound P2P recognition
             if ttype == "cash" and _get_amount(t) < 10000:
-              inbound.append(t)
+                inbound.append(t)
 
             # inbound ACH credit
             if ttype == "ach" and ("credit" in details or "incoming" in details):
@@ -349,7 +348,6 @@ def run_patterns(transactions: List[Dict[str, Any]]):
         })
         risk_score += 4
 
-
     # --- Pattern 9: LAYERING_ACTIVITY ---
     layering_hits = []
 
@@ -375,7 +373,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
         if start_amt <= 0:
             continue
 
-        window_end = start_date + timedelta(hours=48)
+        window_end = start_date + timedelta(days=2)
 
         window = []
         for tx, d, amt, ttype, details in dated[i:]:
@@ -430,90 +428,86 @@ def run_patterns(transactions: List[Dict[str, Any]]):
         })
         risk_score += 6
 
+    # --- Pattern: FUNNELING_ACTIVITY (aggregation → single exit) ---
+    funneling_hits = []
 
-        # --- Pattern 10: FUNNELING_ACTIVITY ---
-    FUNNEL_MIN_COUNT = 4
-    FUNNEL_MIN_TOTAL = 10000.0
-    FUNNEL_RATIO = 0.80
-    FUNNEL_WINDOW_DAYS = 7
+    WINDOW_DAYS = 7
+    MIN_INBOUND_TX = 4
+    MIN_TOTAL_INBOUND = 10000
+    CONSOLIDATION_RATIO = 0.80
 
-    funnel_hits = []
+    # group by date for rolling windows
+    dated = [(tx, _get_date(tx)) for tx in transactions if _get_date(tx)]
 
-    # prepare dated txs
-    dated = [
-        (tx, _get_date(tx), _get_amount(tx), _get_type(tx), _get_details(tx))
-        for tx in transactions
-        if _get_date(tx) is not None
-    ]
-
-    dated.sort(key=lambda x: x[1])
-
-    for i, (tx, start_date, amt, ttype, details) in enumerate(dated):
-        # only inbound starters
-        if ttype not in {"p2p", "ach", "wire"}:
-            continue
-        if amt <= 0:
-            continue
-
-        window_end = start_date + timedelta(days=FUNNEL_WINDOW_DAYS)
+    for anchor_tx, anchor_date in dated:
+        window_start = anchor_date
+        window_end = anchor_date + timedelta(days=WINDOW_DAYS)
 
         inbound = []
+        inbound_senders = set()
+
         outbound = []
+        outbound_destinations = defaultdict(float)
 
-        for t, d, a, tp, det in dated[i:]:
-            if d > window_end:
-                break
+        for tx, tx_date in dated:
+            if not (window_start <= tx_date <= window_end):
+                continue
 
-            # inbound
-            if tp in {"p2p", "ach", "wire"} and a > 0:
-                inbound.append((t, d, a, tp, det))
+            ttype = _get_type(tx)
+            details = _get_details(tx)
+            amount = _get_amount(tx)
 
-            # outbound
-            if tp in {"wire", "p2p"} and a >= 1000:
-                outbound.append((t, d, a, tp, det))
+            # inbound detection
+            if ttype in ("p2p", "ach", "wire") and (
+                "incoming" in details or "from" in details or "credit" in details
+            ):
+                inbound.append(tx)
+                inbound_senders.add(details)  # synthetic sender proxy
 
-        if len(inbound) < FUNNEL_MIN_COUNT:
+            # outbound detection
+            if ttype in ("wire", "p2p") and amount > 0:
+                outbound.append(tx)
+                outbound_destinations[details] += amount
+
+        # inbound checks
+        if len(inbound) < MIN_INBOUND_TX:
             continue
 
-        inbound_total = sum(t[2] for t in inbound)
-        if inbound_total < FUNNEL_MIN_TOTAL:
+        inbound_total = sum(_get_amount(t) for t in inbound)
+        if inbound_total < MIN_TOTAL_INBOUND:
             continue
 
-        # infer distinct senders via Details text
-        senders = {t[4] for t in inbound}
-        if len(senders) < FUNNEL_MIN_COUNT:
+        # require multiple distinct senders
+        if len(inbound_senders) < MIN_INBOUND_TX:
             continue
 
-        # group outbound by destination (details string)
-        outbound_by_dest = defaultdict(float)
-        for _, _, a, _, det in outbound:
-            outbound_by_dest[det] += a
-
-        if not outbound_by_dest:
+        # outbound consolidation check
+        if not outbound:
             continue
 
-        max_out = max(outbound_by_dest.values())
-        if max_out < inbound_total * FUNNEL_RATIO:
+        max_single_destination = max(outbound_destinations.values())
+        if max_single_destination < inbound_total * CONSOLIDATION_RATIO:
             continue
 
-        funnel_hits.append({
-            "start_date": str(start_date),
+        funneling_hits.append({
+            "window_start": str(window_start),
+            "window_end": str(window_end),
             "inbound_count": len(inbound),
             "inbound_total": inbound_total,
-            "outbound_total": max_out,
-            "inbound_transactions": [t[0] for t in inbound],
-            "outbound_transactions": [t[0] for t in outbound],
+            "outbound_consolidated_amount": max_single_destination,
+            "inbound_transactions": inbound,
+            "outbound_transactions": outbound,
         })
 
-    if funnel_hits:
+    # append pattern once
+    if funneling_hits:
         patterns.append({
             "code": "FUNNELING_ACTIVITY",
             "name": "Funneling Activity",
-            "description": "Funds aggregated from multiple sources and consolidated to a single outbound destination.",
-            "matches": funnel_hits,
+            "description": "Multiple inbound credits from distinct sources aggregated and consolidated to a single outbound destination.",
+            "matches": funneling_hits,
         })
         risk_score += 5
-
 
     if risk_score <= 0:
         risk_score = 1

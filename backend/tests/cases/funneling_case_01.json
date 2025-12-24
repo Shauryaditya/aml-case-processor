@@ -1,0 +1,7 @@
+{
+  "id": "funneling_activity_01",
+  "input_file": "funneling_activity_case_01.csv",
+  "expected_patterns": ["FUNNELING_ACTIVITY"],
+  "expected_risk_band": "High",
+  "expected_recommendation": "SAR"
+}

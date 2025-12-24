@@ -1,0 +1,8 @@
+Date,Amount,Type,Details
+2025-01-02,4200,ACH,Payroll deposit from employer
+2025-01-03,1200,ACH,Apartment rent payment
+2025-01-04,180,Card,Grocery store purchase
+2025-01-05,95,Card,Electric utility bill
+2025-01-06,60,Card,Internet service payment
+2025-01-10,1500,ACH,Transfer to savings account
+2025-01-15,300,Card,Medical copay

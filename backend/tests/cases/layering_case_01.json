@@ -1,0 +1,11 @@
+{
+  "id": "layering_activity_01",
+  "description": "Rapid multi-hop movement of funds across multiple transaction types within 48 hours indicating layering behavior",
+  "input_file": "layering_activity_case_01.csv",
+  "expected_patterns": [
+    "LAYERING_ACTIVITY",
+    "RAPID_OUTFLOW"
+  ],
+  "expected_risk_band": "High",
+  "expected_recommendation": "SAR"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "clean_no_sar_01",
+  "input_file": "clean_no_sar_01.csv",
+  "expected_patterns": [],
+  "risk_band": "Low",
+  "final_recommendation": "No SAR"
+}
