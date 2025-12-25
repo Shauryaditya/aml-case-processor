@@ -14,6 +14,10 @@ CRYPTO_MIN_OUTFLOW = 5000.0
 ATM_STRUCT_MIN_AMOUNT = 8000.0
 ATM_STRUCT_MAX_AMOUNT = 10000.0
 ATM_STRUCT_MIN_COUNT = 3
+INBOUND_SMURF_MIN_COUNT = 4
+INBOUND_SMURF_MIN_SENDERS = 3
+INBOUND_SMURF_MIN_TOTAL = 1500.0
+INBOUND_SMURF_MAX_SINGLE = 1000.0
 
 HIGH_RISK_KEYWORDS = [
     "highriskcountry",
@@ -122,6 +126,65 @@ def run_patterns(transactions: List[Dict[str, Any]]):
             "name": "Rapid Cash-to-Wire (Same Day)",
             "description": "Same-day cash deposits followed by outbound wire transfers over 5,000.",
             "matches": cash_wire_hits,
+        })
+        risk_score += 4
+
+    # --- Pattern: INBOUND SMURFING (multi small inbound credits) ---
+    inbound_smurf_hits = []
+
+    for day, txs in by_day.items():
+        eligible_inbounds = []
+        unique_senders = set()
+
+        for t in txs:
+            ttype = _get_type(t)
+            amount = _get_amount(t)
+            details = _get_details(t)
+
+            # Only electronic inbound credits (NO CASH)
+            if ttype not in ("p2p", "ach", "wire"):
+                continue
+
+            # Must be inbound
+            if not ("incoming" in details or "credit" in details or "from" in details):
+                continue
+
+            # Smurf-sized only
+            if amount >= INBOUND_SMURF_MAX_SINGLE:
+                continue
+
+            eligible_inbounds.append(t)
+            # sender proxy (synthetic-safe)
+            unique_senders.add(details)
+
+        # Minimum transaction count
+        if len(eligible_inbounds) < INBOUND_SMURF_MIN_COUNT:
+            continue
+
+        # Require distinct senders
+        if len(unique_senders) < INBOUND_SMURF_MIN_SENDERS:
+            continue
+
+        total_amount = sum(_get_amount(t) for t in eligible_inbounds)
+        if total_amount < INBOUND_SMURF_MIN_TOTAL:
+            continue
+
+        # ✅ STORE THE HIT
+        inbound_smurf_hits.append({
+            "date": str(day),
+            "transactions": eligible_inbounds,
+            "count": len(eligible_inbounds),
+            "unique_senders": len(unique_senders),
+            "total_amount": total_amount,
+        })
+    
+    # ✅ Append pattern ONCE, AFTER loop
+    if inbound_smurf_hits:
+        patterns.append({
+            "code": "INBOUND_SMURFING",
+            "name": "Inbound Smurfing (Funnel Behavior)",
+            "description": "Multiple small inbound transfers from distinct senders aggregated to avoid reporting thresholds.",
+            "matches": inbound_smurf_hits,
         })
         risk_score += 4
 
@@ -300,51 +363,6 @@ def run_patterns(transactions: List[Dict[str, Any]]):
             "name": "Rapid Outflow (Funds Drained After Inbound)",
             "description": "Inbound funds followed by large outbound movement within 24 hours, meeting 80% outflow test.",
             "matches": rapid_outflow_hits,
-        })
-        risk_score += 4
-
-    # --- Pattern: INBOUND SMURFING (multi small inbound credits) ---
-    inbound_smurf_hits = []
-
-    for day, txs in by_day.items():
-        inbound = []
-
-        for t in txs:
-            ttype = _get_type(t)
-            details = _get_details(t)
-
-            # inbound P2P recognition
-            if ttype == "cash" and _get_amount(t) < 10000:
-                inbound.append(t)
-
-            # inbound ACH credit
-            if ttype == "ach" and ("credit" in details or "incoming" in details):
-                inbound.append(t)
-
-            # inbound wire credit
-            if ttype == "wire" and ("incoming" in details or "credit" in details):
-                inbound.append(t)
-
-        # Now check smurfing conditions for THIS day
-        if len(inbound) >= 3:
-            total = sum(_get_amount(t) for t in inbound)
-
-            # original rule: amounts < 3000 AND total >= 5000
-            if all(_get_amount(t) < 3000 for t in inbound) and total >= 3000:
-                inbound_smurf_hits.append({
-                    "date": str(day),
-                    "transactions": inbound,
-                    "count": len(inbound),
-                    "total_amount": total,
-                })
-
-    # append pattern AFTER loop
-    if inbound_smurf_hits:
-        patterns.append({
-            "code": "INBOUND_SMURFING",
-            "name": "Inbound Smurfing (Funnel Behavior)",
-            "description": "Multiple small inbound transfers aggregated to avoid reporting thresholds.",
-            "matches": inbound_smurf_hits,
         })
         risk_score += 4
 
