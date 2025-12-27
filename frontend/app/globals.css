@@ -120,3 +120,105 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom gradient utilities for AML Case Processor */
+@layer utilities {
+  /* Background gradients */
+  .gradient-bg-page {
+    background: linear-gradient(135deg, #f9fafb 0%, #eff6ff 50%, #f9fafb 100%);
+  }
+
+  .gradient-bg-header {
+    background: linear-gradient(to right, #2563eb, #1d4ed8);
+  }
+
+  .gradient-bg-hero-text {
+    background: linear-gradient(to right, #2563eb, #9333ea);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Risk level gradients */
+  .gradient-risk-high {
+    background: linear-gradient(to right, #dc2626, #b91c1c);
+  }
+
+  .gradient-risk-medium {
+    background: linear-gradient(to right, #facc15, #eab308);
+  }
+
+  .gradient-risk-low {
+    background: linear-gradient(to right, #16a34a, #15803d);
+  }
+
+  /* Button gradients */
+  .gradient-btn-primary {
+    background: linear-gradient(to right, #2563eb, #1d4ed8);
+  }
+
+  .gradient-btn-primary:hover {
+    background: linear-gradient(to right, #1d4ed8, #1e40af);
+  }
+
+  .gradient-btn-success {
+    background: linear-gradient(to right, #16a34a, #15803d);
+  }
+
+  .gradient-btn-success:hover {
+    background: linear-gradient(to right, #15803d, #166534);
+  }
+
+  /* Shadow utilities for gradient elements */
+  .shadow-red-glow {
+    box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.3), 0 8px 10px -6px rgba(220, 38, 38, 0.2);
+  }
+
+  .shadow-yellow-glow {
+    box-shadow: 0 10px 25px -5px rgba(250, 204, 21, 0.3), 0 8px 10px -6px rgba(250, 204, 21, 0.2);
+  }
+
+  .shadow-green-glow {
+    box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.3), 0 8px 10px -6px rgba(22, 163, 74, 0.2);
+  }
+
+  .shadow-blue-glow {
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3), 0 8px 10px -6px rgba(37, 99, 235, 0.2);
+  }
+}
+
+/* Animation for pattern badges */
+@layer components {
+  .pattern-badge-critical {
+    @apply bg-red-100 text-red-800 border border-red-300 font-semibold shadow-sm;
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .pattern-badge-high {
+    @apply bg-orange-100 text-orange-800 border border-orange-300 font-medium shadow-sm;
+  }
+
+  .pattern-badge-medium {
+    @apply bg-yellow-100 text-yellow-800 border border-yellow-300;
+  }
+
+  .pattern-badge-low {
+    @apply bg-blue-100 text-blue-800 border border-blue-300;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+}
+
+/* Smooth transitions */
+@layer utilities {
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
