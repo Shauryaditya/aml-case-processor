@@ -128,7 +128,7 @@ export default function Home() {
   const [progressText, setProgressText] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
   async function processCase(): Promise<void> {
     if (!file) return;
