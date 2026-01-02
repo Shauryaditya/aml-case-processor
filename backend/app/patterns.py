@@ -32,13 +32,36 @@ HIGH_RISK_KEYWORDS = [
     "foreign wire"
 ]
 
+def infer_direction_from_details(details: str) -> str:
+    d = details.lower()
 
-def _get_amount(tx: Dict[str, Any]) -> float:
-    raw = tx.get("amount") or tx.get("Amount")
+    inbound_markers = (
+        "incoming", "from ", "credit", "deposit", "salary", "payroll"
+    )
+    outbound_markers = (
+        "transfer to", "wire to", "withdrawal", "payment", "sent", "debit"
+    )
+
+    if any(k in d for k in inbound_markers):
+        return "inbound"
+    if any(k in d for k in outbound_markers):
+        return "outbound"
+
+    return "unknown"
+
+def _get_amount(tx):
+    raw = tx.get("amount") or tx.get("Amount") or ""
     try:
-        return float(raw)
-    except (TypeError, ValueError):
+        cleaned = (
+            str(raw)
+            .replace("$", "")
+            .replace(",", "")
+            .strip()
+        )
+        return float(cleaned)
+    except Exception:
         return 0.0
+
 
 
 def _get_date(tx: Dict[str, Any]) -> Optional[date]:
@@ -96,7 +119,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
     # --- Pattern 1: Structuring (Near-Threshold Cash) ---
     structuring_hits: List[Dict[str, Any]] = []
     for tx in transactions:
-        if _get_type(tx) == "cash" and _get_amount(tx) < STRUCTURING_THRESHOLD:
+        if _get_type(tx) == "cash" and 9900 < _get_amount(tx) < STRUCTURING_THRESHOLD:
             structuring_hits.append(tx)
 
     if structuring_hits:
@@ -369,82 +392,91 @@ def run_patterns(transactions: List[Dict[str, Any]]):
     # --- Pattern 9: LAYERING_ACTIVITY ---
     layering_hits = []
 
-    NORMAL_SPEND_KEYWORDS = {
-        "rent", "grocery", "groceries", "utility", "utilities",
-        "salary", "payroll", "insurance", "mortgage"
-    }
+    SALARY_KEYWORDS = {"salary", "payroll"}
+    CRYPTO_KEYWORDS = {"crypto", "exchange", "binance", "coinbase", "kraken"}
 
-    # prepare dated transactions
+    SALARY_MAX = 5000          # salary-sized upper bound
+    MIN_LARGE_TX = 6000        # meaningful laundering threshold
+    WINDOW_DAYS = 7
+    MIN_CHANNELS = 3
+    # ⛔ removed salary/payroll — those are used as camouflage in AML
+
+    # prepare dated transactions WITH direction
     dated = [
-        (tx, _get_date(tx), _get_amount(tx), _get_type(tx), _get_details(tx))
+        (
+            tx,
+            _get_date(tx),
+            _get_amount(tx),
+            _get_type(tx),
+            _get_details(tx),
+        )
         for tx in transactions
         if _get_date(tx) is not None
     ]
-
-    # sort by time
-    dated.sort(key=lambda x: x[1])
-
-    for i, (start_tx, start_date, start_amt, start_type, start_details) in enumerate(dated):
-        # initial inbound only
-        if start_type not in {"cash", "ach", "check"}:
-            continue
-        if start_amt <= 0:
+    
+    for start_tx, start_date, start_amt, start_type, start_details in dated:
+        print("Evaluating tx for layering:",start_tx, start_amt)
+        # ignore salary-sized anchors
+        if start_amt <= SALARY_MAX and any(k in start_details for k in SALARY_KEYWORDS):
             continue
 
-        window_end = start_date + timedelta(days=2)
+        window_end = start_date + timedelta(days=WINDOW_DAYS)
 
-        window = []
-        for tx, d, amt, ttype, details in dated[i:]:
-            if d > window_end:
-                break
-            window.append((tx, d, amt, ttype, details))
-
-        if len(window) < 3:
-            continue
-
-        # distinct transaction types
-        distinct_types = {t[3] for t in window}
-        if len(distinct_types) < 3:
-            continue
-
-        # exclude normal economic activity
-        if any(
-            any(keyword in t[4] for keyword in NORMAL_SPEND_KEYWORDS)
-            for t in window
-        ):
-            continue
-
-        # outbound hops
-        outbound = [
-            t for t in window
-            if t[3] in {"wire", "p2p", "ach"} and t[2] > 0
+        window = [
+            (tx, d, amt, ttype, details)
+            for tx, d, amt, ttype, details in dated
+            if start_date <= d <= window_end
         ]
 
-        if len(outbound) < 2:
+        if len(window) < 4:
             continue
 
-        outbound_total = sum(t[2] for t in outbound)
+        channels_used = set()
+        total_movement = 0.0
+        outbound_count = 0
 
-        if outbound_total < start_amt * 0.70:
+        for tx, d, amt, ttype, details in window:
+            direction = infer_direction_from_details(details)
+            # register channel
+            channels_used.add(ttype)
+
+            # crypto is always suspicious movement
+            if any(k in details for k in CRYPTO_KEYWORDS):
+                total_movement += amt
+                outbound_count += 1
+                continue
+
+            if direction == "outbound":
+                total_movement += amt
+                outbound_count += 1
+
+        if len(channels_used) < MIN_CHANNELS:
             continue
 
+        if total_movement < MIN_LARGE_TX:
+            continue
+        
         layering_hits.append({
-            "start_date": str(start_date),
-            "transaction_types": list(distinct_types),
-            "initial_inbound": start_tx,
-            "outbound_transactions": [t[0] for t in outbound],
-            "outbound_total": outbound_total,
-            "inbound_amount": start_amt,
+        "window_start": str(start_date),
+        "window_end": str(window_end),
+        "channels_used": list(channels_used),
+        "channel_count": len(channels_used),
+        "total_movement": total_movement,
+        "transactions": [t[0] for t in window],
         })
-
+        
     if layering_hits:
         patterns.append({
-            "code": "LAYERING_ACTIVITY",
-            "name": "Layering Activity",
-            "description": "Rapid movement of funds across multiple transaction types and hops, inconsistent with normal economic behavior.",
-            "matches": layering_hits,
+                "code": "LAYERING_ACTIVITY",
+                "name": "Layering Activity",
+                "description": (
+                "Rapid redistribution of inbound funds across multiple outbound "
+                "transactions within a short time window, inconsistent with normal usage."
+                ),
+                "matches": layering_hits,
         })
         risk_score += 6
+
 
     # --- Pattern: FUNNELING_ACTIVITY (aggregation → single exit) ---
     funneling_hits = []

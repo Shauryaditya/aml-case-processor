@@ -110,7 +110,7 @@ function TransactionTable({ transactions }: { transactions: Transaction[] }) {
               <tr key={i} className="border-t hover:bg-gray-50">
                 <td className="px-3 py-2">{txn?.Date || "-"}</td>
                 <td className="px-3 py-2">{txn.Type || "-"}</td>
-                <td className="px-3 py-2 text-right">${txn.amount || "0"}</td>
+                <td className="px-3 py-2 text-right">{txn.amount || "0"}</td>
                 <td className="px-3 py-2 text-right">{txn.Details || "-"}</td>
               </tr>
             ))}
