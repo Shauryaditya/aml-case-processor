@@ -63,6 +63,32 @@ risk_score: {risk_score}
 risk_band: {risk_band}
 """
 
+def format_tx_for_sar(tx: dict) -> str:
+    date = tx.get("Date", "Unknown date")
+    channel = tx.get("Type", "unknown").upper()
+    details = tx.get("Details", "no description")
+
+    amount = tx.get("amount")
+    direction = tx.get("direction")
+
+    # Normalize amount
+    amt = (
+        str(amount)
+        .replace("$", "")
+        .replace(",", "")
+        .strip()
+        if amount else "0"
+    )
+
+    # Direction-aware wording (critical)
+    if direction == "inbound":
+        flow = "credit"
+    elif direction == "outbound":
+        flow = "debit"
+    else:
+        flow = "transaction"
+
+    return f"{date} – {flow} of ${amt} via {channel} – {details}"
 
 def _fallback_sar(transactions, patterns, risk_score=None, risk_band=None):
     """
@@ -91,9 +117,7 @@ def _fallback_sar(transactions, patterns, risk_score=None, risk_band=None):
     if tx_sample:
         lines.append("Selected example transactions include:")
         for tx in tx_sample:
-            lines.append(
-                f"- {tx.get('Date')} – {tx.get('amount')} via {tx.get('Type')} – {tx.get('Details')}"
-            )
+            lines.append(f"- {format_tx_for_sar(tx)}")
     else:
         lines.append("- No transaction-level details are available.")
     lines.append("")
@@ -115,7 +139,7 @@ def _fallback_sar(transactions, patterns, risk_score=None, risk_band=None):
     if tx_sample:
         for tx in tx_sample:
             lines.append(
-                f"- {tx.get('Date')} – {tx.get('amount')} via {tx.get('Type')} – {tx.get('Details')}"
+                f"- {format_tx_for_sar(tx)}"
             )
     else:
         lines.append("- No transactions to summarize.")
@@ -147,9 +171,10 @@ def generate_sar(transactions, patterns, risk_score=None, risk_band=None):
         return _fallback_sar(transactions, patterns, risk_score, risk_band)
 
     tx_for_prompt = transactions[:100] if transactions else []
+    formatted_txs = [format_tx_for_sar(tx) for tx in tx_for_prompt]
 
     prompt = SAR_PROMPT_TEMPLATE.format(
-        transactions=json.dumps(tx_for_prompt, indent=2),
+        transactions="\n".join(formatted_txs),
         patterns=json.dumps(patterns or [], indent=2),
         risk_score=risk_score if risk_score is not None else "N/A",
         risk_band=risk_band if risk_band is not None else "N/A",

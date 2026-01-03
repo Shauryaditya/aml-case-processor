@@ -6,6 +6,9 @@ import pdfplumber
 import re
 
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+KNOWN_CHANNELS = {
+    "ach", "wire", "cash", "atm", "card", "p2p", "crypto"
+}
 
 def extract_transactions(file_path: str):
     path = Path(file_path)
@@ -20,6 +23,7 @@ def extract_transactions(file_path: str):
     else:
         # fallback / no-op
         return []
+
 
 
 def _extract_from_csv(path: Path):
@@ -54,38 +58,96 @@ def _extract_from_excel(path: Path):
         })
     return txs
 
+def infer_direction_from_details(details: str) -> str:
+    d = details.lower()
+
+    inbound = (
+        "incoming", "from ", "credit", "deposit", "salary", "payroll", "received"
+    )
+    outbound = (
+        "transfer to", "wire to", "withdrawal", "payment", "sent", "debit", "purchase"
+    )
+
+    if any(k in d for k in inbound):
+        return "inbound"
+    if any(k in d for k in outbound):
+        return "outbound"
+
+    return "unknown"
+
 
 def _extract_from_pdf(path: Path):
     """
-    Parse PDFs where each transaction row looks like:
-    2025-03-09 23510 ACH Outgoing transfer
-    (like Mixed_100_Synthetic_Cases.pdf)
+    Hybrid PDF parser:
+    - Uses Debit/Credit if available
+    - Falls back to single amount + keyword inference
     """
     txs = []
+
+    money_re = re.compile(r"\$-?[\d,]+\.\d{2}")
+
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
             text = page.extract_text() or ""
             for line in text.splitlines():
                 line = line.strip()
-                # skip headings like "Case 1", "Expected Patterns", etc.
+
+                # skip noise
                 if not line:
                     continue
                 if not DATE_RE.match(line[:10]):
                     continue
-
-                parts = line.split()
-                if len(parts) < 4:
+                if "Opening Balance" in line or "Closing Balance" in line:
                     continue
 
-                date_str = parts[0]
-                amount_str = parts[1]
-                type_str = parts[2]
-                details = " ".join(parts[3:])
+                date_str = line[:10]
+                amounts = money_re.findall(line)
 
+                debit = credit = balance = None
+                direction = "unknown"
+
+                if len(amounts) == 3:
+                    debit, credit, balance = amounts
+                elif len(amounts) == 2:
+                    debit, balance = amounts
+                elif len(amounts) == 1:
+                    debit = amounts[0]
+                else:
+                    continue
+                # Decide transaction amount + direction
+                if credit and credit != "$0.00":
+                    amount = credit
+                    direction = "inbound"
+                elif debit:
+                    amount = debit
+                    direction = "outbound"
+                else:
+                    continue
+
+
+                # isolate text fields
+                clean_line = line
+                for a in amounts:
+                    clean_line = clean_line.replace(a, "")
+
+                tokens = clean_line.split()
+
+                channel = "unknown"
+                for t in reversed(tokens):
+                    if t.lower() in KNOWN_CHANNELS:
+                        channel = t.lower()
+                        break
+
+                description = " ".join(
+                    t for t in tokens[1:] if t.lower() != channel
+                ).lower()
                 txs.append({
                     "Date": date_str,
-                    "amount": amount_str,
-                    "Type": type_str,
-                    "Details": details,
+                    "amount": amount,
+                    "Type": channel,
+                    "Details": description,
+                    "direction": direction,
                 })
+
     return txs
+

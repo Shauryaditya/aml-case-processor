@@ -32,6 +32,15 @@ HIGH_RISK_KEYWORDS = [
     "foreign wire"
 ]
 
+def _get_direction(tx: Dict[str, Any]) -> str:
+    # Parser-provided direction has highest priority
+    d = (tx.get("direction") or "").lower()
+    if d in {"inbound", "outbound"}:
+        return d
+
+    # Fallback only if parser didn't provide it
+    return infer_direction_from_details(_get_details(tx))
+
 def infer_direction_from_details(details: str) -> str:
     d = details.lower()
 
@@ -169,7 +178,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
                 continue
 
             # Must be inbound
-            if not ("incoming" in details or "credit" in details or "from" in details):
+            if _get_direction(t) != "inbound":
                 continue
 
             # Smurf-sized only
@@ -266,7 +275,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
     crypto_deposits = []
     for tx, d in dated_txs:
         details = _get_details(tx)
-        if any(k in details for k in CRYPTO_KEYWORDS):
+        if any(k in details for k in CRYPTO_KEYWORDS) and _get_direction(tx) == "inbound":
             crypto_deposits.append((tx, d))
 
     # Look for outbound flows (wire/P2P) within a 48-hour window
@@ -351,7 +360,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
         in_amt = _get_amount(in_tx)
 
         # inbound criteria
-        if in_type not in inbound_types:
+        if _get_direction(in_tx) != "inbound":
             continue
         if in_amt < 5000:
             continue
@@ -436,7 +445,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
         outbound_count = 0
 
         for tx, d, amt, ttype, details in window:
-            direction = infer_direction_from_details(details)
+            direction = _get_direction(tx)
             # register channel
             channels_used.add(ttype)
 
@@ -449,7 +458,7 @@ def run_patterns(transactions: List[Dict[str, Any]]):
             if direction == "outbound":
                 total_movement += amt
                 outbound_count += 1
-
+        print("  -> window total movement:", total_movement, "across", len(channels_used), "channels and", outbound_count, "outbound txns")
         if len(channels_used) < MIN_CHANNELS:
             continue
 
