@@ -99,6 +99,10 @@ def process_uploaded_file(job_id: str):
         # 1) Parse transactions
         transactions = extract_transactions(file_path)
 
+        print(f"Parsed {len(transactions)} transactions")
+        for i, tx in enumerate(transactions[:5]):
+            print(f"TX {i}: {tx['Date']} | {tx['direction']} | {tx['Type']} | {tx['amount']} | {tx['Details']}")
+
         # 2) Run rules / patterns
         JOB_STORE[job_id]["status"] = "rules"
         patterns, risk_score = run_patterns(transactions)
