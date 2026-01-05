@@ -406,7 +406,7 @@ export default function Home() {
             <CardHeader className=" border-b">
               <CardTitle>Detailed Analysis</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-0">
               {isProcessing ? (
                 <div className="flex flex-col items-center justify-center gap-4 py-12">
                   <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
