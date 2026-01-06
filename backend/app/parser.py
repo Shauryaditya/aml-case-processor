@@ -81,12 +81,12 @@ def _extract_from_pdf(path: Path):
     Handles three PDF formats:
     1. Complex_AML_Case: "Date Amount Type Direction Details" (1 amt with $, explicit direction)
     2. Mixed_200_Cases: "Date Description Channel Debit Credit" (no $, 2 amt columns)
-    3. Upgraded_Personal: "Date Description Channel Debit Credit Balance" (with $, 3 amt columns)
+    3. Upgraded_Business/Personal: "Date Description Channel Debit Credit Balance" (with $, 3 amt columns)
     """
     txs = []
     
-    # Regex patterns
-    money_with_dollar = re.compile(r"\$[\d,]+(?:\.\d{2})?")
+    # Regex for amounts with dollar signs (including negative balances)
+    money_with_dollar = re.compile(r"\$-?[\d,]+(?:\.\d{2})?")
     money_without_dollar = re.compile(r"(?<!\$)\b(\d{1,3}(?:,?\d{3})*(?:\.\d{2})?)\b")
 
     with pdfplumber.open(path) as pdf:
@@ -101,20 +101,19 @@ def _extract_from_pdf(path: Path):
                     continue
                 if any(x in line.lower() for x in [
                     "opening balance", "closing balance", "statement period", 
-                    "date amount type", "date description channel"
+                    "date amount type", "date description channel", "debit credit balance"
                 ]):
                     continue
 
                 date_str = line[:10]
                 remaining = line[10:].strip()
                 
-                # Try with dollar signs first
+                # Try extracting dollar amounts
                 amounts = money_with_dollar.findall(remaining)
                 has_dollar = len(amounts) > 0
                 
                 # If no dollar signs, try without
                 if not has_dollar:
-                    # Split the line and look for numeric values
                     tokens = remaining.split()
                     amounts = [t for t in tokens if money_without_dollar.match(t)]
                 
@@ -131,22 +130,19 @@ def _extract_from_pdf(path: Path):
 
                 if has_explicit_direction:
                     # FORMAT 1: Complex_AML_Case (Date Amount Type Direction Details)
-                    # Example: "2025-01-02 $480 Card Outbound Cash deposit"
-                    
                     transaction_amount = amounts[0]
                     
-                    # Extract direction
                     if "inbound" in remaining.lower():
                         direction = "inbound"
                     elif "outbound" in remaining.lower():
                         direction = "outbound"
                     
-                    # Extract channel (comes before direction)
+                    # Extract channel and description
                     tokens = remaining.split()
                     for i, t in enumerate(tokens):
                         if t.lower() in KNOWN_CHANNELS:
                             channel = t.lower()
-                            # Description is everything after direction keyword
+                            # Find direction keyword position
                             dir_idx = -1
                             for j in range(i+1, len(tokens)):
                                 if tokens[j].lower() in ["inbound", "outbound"]:
@@ -156,34 +152,74 @@ def _extract_from_pdf(path: Path):
                                 description = " ".join(tokens[dir_idx+1:]).lower()
                             break
                 
-                elif has_dollar and len(amounts) == 3:
-                    # FORMAT 3: Upgraded_Personal (Debit Credit Balance with $)
-                    debit_str, credit_str, balance_str = amounts
-                    debit_val = float(debit_str.replace('$', '').replace(',', ''))
-                    credit_val = float(credit_str.replace('$', '').replace(',', ''))
+                elif has_dollar and len(amounts) >= 2:
+                    # CRITICAL: Identify which amounts are Debit/Credit vs Balance
+                    # Strategy: Balance is typically the LAST amount and often much larger or negative
+                    # The transaction amount is one of the first 1-2 amounts
                     
-                    if credit_val > 0:
-                        transaction_amount = credit_str
-                        direction = "inbound"
-                    elif debit_val > 0:
-                        transaction_amount = debit_str
-                        direction = "outbound"
+                    if len(amounts) == 2:
+                        # FORMAT: Could be Debit+Credit OR Amount+Balance
+                        # Heuristic: if second is much larger or negative, it's balance
+                        first_val = float(amounts[0].replace('$', '').replace(',', ''))
+                        second_val = float(amounts[1].replace('$', '').replace(',', ''))
+                        
+                        # If second is negative or 3x+ larger, it's likely the balance
+                        if second_val < 0 or abs(second_val) > abs(first_val) * 3:
+                            transaction_amount = amounts[0]
+                            # Direction based on context since we don't have both debit/credit
+                            direction = "outbound" if first_val > 0 else "inbound"
+                        else:
+                            # Both are transaction amounts (debit and credit columns)
+                            # Pick non-zero one
+                            if first_val > 0:
+                                transaction_amount = amounts[0]
+                                direction = "outbound"
+                            elif second_val > 0:
+                                transaction_amount = amounts[1]
+                                direction = "inbound"
                     
-                    # Extract channel and description
+                    elif len(amounts) == 3:
+                        # FORMAT: Debit, Credit, Balance
+                        # Last one is balance, first two are debit/credit
+                        debit_str = amounts[0]
+                        credit_str = amounts[1]
+                        balance_str = amounts[2]  # Ignore this
+                        
+                        debit_val = float(debit_str.replace('$', '').replace(',', ''))
+                        credit_val = float(credit_str.replace('$', '').replace(',', ''))
+                        
+                        # Credit (inbound) takes precedence
+                        if credit_val > 0:
+                            transaction_amount = credit_str
+                            direction = "inbound"
+                        elif debit_val > 0:
+                            transaction_amount = debit_str
+                            direction = "outbound"
+                    
+                    # Extract channel and description - BEFORE the amounts
+                    # Remove all amounts from the line first
                     clean = remaining
                     for a in amounts:
-                        clean = clean.replace(a, "")
+                        clean = clean.replace(a, "", 1)  # Remove first occurrence
+                    
                     tokens = clean.split()
                     
+                    # Channel is typically the last meaningful token before amounts
                     for t in reversed(tokens):
                         if t.lower() in KNOWN_CHANNELS:
                             channel = t.lower()
                             break
                     
-                    description = " ".join(t for t in tokens if t.lower() != channel).lower()
+                    # Description is everything before channel
+                    desc_tokens = []
+                    for t in tokens:
+                        if t.lower() == channel:
+                            break
+                        desc_tokens.append(t)
+                    description = " ".join(desc_tokens).lower().strip()
 
                 elif not has_dollar and len(amounts) >= 1:
-                    # FORMAT 2: Mixed_200_Cases (no $, amount without $)
+                    # FORMAT 2: Mixed_200_Cases (no $)
                     transaction_amount = f"${amounts[0]}"
                     
                     # Extract channel
@@ -193,11 +229,16 @@ def _extract_from_pdf(path: Path):
                             channel = t.lower()
                             break
                     
-                    # Description is everything except channel and amounts
+                    # Description
                     clean = remaining
                     for a in amounts:
-                        clean = clean.replace(a, "")
-                    description = " ".join(t for t in clean.split() if t.lower() != channel).lower()
+                        clean = clean.replace(a, "", 1)
+                    desc_tokens = []
+                    for t in clean.split():
+                        if t.lower() == channel:
+                            break
+                        desc_tokens.append(t)
+                    description = " ".join(desc_tokens).lower().strip()
                     
                     # Infer direction
                     direction = infer_direction_from_details(description)
