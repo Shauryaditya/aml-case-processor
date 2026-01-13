@@ -30,12 +30,38 @@ SAR_DRIVER_PRIORITY = [
     "P2P_MULTIPLE_TRANSFERS_SAME_DAY",  # LOW – supporting only
 ]
 
+SUPPORTING_INDICATORS_BY_DRIVER = {
+    "LAYERING_ACTIVITY": [
+        "RAPID_OUTFLOW",
+        "MULTIPLE_TRANSACTION_CHANNELS",
+        "RAPID_SEQUENCE_OF_TRANSFERS",
+    ],
+    "FUNNELING_ACTIVITY": [
+        "MULTIPLE_INBOUND_SOURCES",
+        "AGGREGATION_OF_FUNDS",
+        "SINGLE_EXIT_DESTINATION",
+    ],
+    "INBOUND_SMURFING": [
+        "MULTIPLE_SMALL_INBOUND_TRANSFERS",
+        "DISTINCT_SENDERS",
+    ],
+}
+
 def compute_supporting_indicators(patterns, main_driver):
-    return [
-        p["code"]
-        for p in patterns
-        if p["code"] != main_driver
+    pattern_codes = {p["code"] for p in patterns}
+
+    # 1. Explicit supporting patterns (if present)
+    supporting = [
+        code for code in pattern_codes
+        if code != main_driver
     ]
+
+    # 2. Implicit indicators inferred from main driver
+    inferred = SUPPORTING_INDICATORS_BY_DRIVER.get(main_driver, [])
+
+    # Merge + dedupe
+    return sorted(set(supporting + inferred))
+
 
 def compute_case_summary(patterns, risk_band, final_recommendation):
     main_driver = compute_main_sar_driver(patterns)
