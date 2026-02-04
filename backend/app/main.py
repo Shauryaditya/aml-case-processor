@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uuid
 from .jobs import process_uploaded_file, JOB_STORE
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="AML Case Processor")
 

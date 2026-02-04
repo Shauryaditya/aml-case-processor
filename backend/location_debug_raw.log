@@ -1,0 +1,88 @@
+```json
+{
+  "emily brooks": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "james walker": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "daniel ross": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "kevin thompson": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "omega tech group": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "bluestone services": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "apex solutions llc": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "michael carter": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "north ridge consulting": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "vertex trading llc": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "sarah nguyen": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "unknown sender": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "laura martinez": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "summit logistics": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  }
+}
+```

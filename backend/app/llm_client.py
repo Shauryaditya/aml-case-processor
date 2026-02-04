@@ -1,8 +1,15 @@
 import os
 import json
 import requests
+from dotenv import load_dotenv
+from pathlib import Path
 
-OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
+# Explicitly load .env from backend root
+base_dir = Path(__file__).resolve().parent.parent
+env_path = base_dir / ".env"
+load_dotenv(dotenv_path=env_path)
+
+OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
@@ -65,7 +72,7 @@ risk_band: {risk_band}
 
 def format_tx_for_sar(tx: dict) -> str:
     date = tx.get("Date", "Unknown date")
-    channel = tx.get("Type", "unknown").upper()
+    channel = (tx.get("Type") or "unknown").upper()
     details = tx.get("Details", "no description")
 
     amount = tx.get("amount")
@@ -201,3 +208,135 @@ def generate_sar(transactions, patterns, risk_score=None, risk_band=None):
     except requests.RequestException:
         # On any network/auth/model error: do NOT kill the job
         return _fallback_sar(transactions, patterns, risk_score, risk_band)
+
+
+LOCATION_PROMPT_TEMPLATE = """
+You are a location extraction expert.
+Analyze the following transaction descriptions and extract the City, Country, and approximate coordinates (lat, lng).
+If a location is not found, return null for those fields.
+
+Return a JSON object where keys are the original descriptions and values are the location data.
+Example:
+{{
+  "UBER *TRIP LONDON HELP.UBER.COM": {{
+    "city": "London",
+    "country": "United Kingdom",
+    "lat": 51.5074,
+    "lng": -0.1278
+  }}
+}}
+
+DESCRIPTIONS:
+{descriptions}
+"""
+
+def enrich_locations(transactions):
+    """
+    Extracts location data from transaction details using LLM.
+    Returns:
+      1. Enriched transactions (list)
+      2. Location summary (string)
+    """
+    if not OPENROUTER_KEY or not transactions:
+        print("Skipping location enrichment: No API key or transactions")
+        return transactions, "Location analysis unavailable (LLM key missing)."
+
+    # 1. Deduplicate descriptions to save tokens
+    unique_details = list({tx.get("Details", "").strip() for tx in transactions if tx.get("Details")})
+    # Filter out empty or very short descriptions
+    unique_details = [d for d in unique_details if len(d) > 3][:30] # Limit to 30 unique descriptions to prevent truncation
+
+    if not unique_details:
+        return transactions, "No identifiable locations found."
+
+    # 2. Call LLM
+    prompt = LOCATION_PROMPT_TEMPLATE.format(descriptions=json.dumps(unique_details, indent=2))
+    
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:3000",
+        "X-Title": "AML Case Processor",
+    }
+    
+    body = {
+        "model": "arcee-ai/trinity-large-preview:free", 
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 3000,
+#        "response_format": {"type": "json_object"}
+    }
+    
+    location_map = {}
+    try:
+        print(f"Sending {len(unique_details)} descriptions for location enrichment...")
+        resp = requests.post(OPENROUTER_URL, headers=headers, json=body, timeout=45)
+        
+        if not resp.ok:
+            error_details = resp.text
+            print(f"LLM API Error: {resp.status_code} - {error_details}")
+            raise Exception(f"API Error {resp.status_code}: {error_details}")
+
+        content = resp.json()["choices"][0]["message"]["content"]
+        
+        # Parse potential JSON response (handling markdown fences if model adds them)
+        # Robust JSON extraction
+        import re
+        
+        # Log raw response for debugging
+        with open("location_debug_raw.log", "w", encoding="utf-8") as f:
+            f.write(content)
+
+        # 1. Remove <think> tags if present
+        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+        
+        # 2. Extract JSON block using regex (finding the outer-most braces)
+        json_match = re.search(r'(\{.*\})', content, re.DOTALL)
+        if json_match:
+            content = json_match.group(1)
+        
+        # 3. Cleanup common markdown artifacts just in case
+        content = content.replace("```json", "").replace("```", "").strip()
+        
+        if not content:
+            raise ValueError("LLM returned empty content after cleanup")
+            
+        location_map = json.loads(content)
+        print(f"Location enrichment successful. Mapped {len(location_map)} locations.")
+        
+    except Exception as e:
+        import traceback
+        with open("location_error.log", "w") as f:
+            f.write(f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}")
+            
+        print(f"Location enrichment failed: {e}")
+        return transactions, "Location analysis failed due to service error."
+
+    # 3. Merge back into transactions
+    enriched_txs = []
+    countries = set()
+    cities = set()
+    
+    for tx in transactions:
+        details = tx.get("Details", "").strip()
+        loc_data = location_map.get(details)
+        
+        new_tx = tx.copy()
+        if loc_data and isinstance(loc_data, dict) and loc_data.get("country"):
+            new_tx["location_city"] = loc_data.get("city")
+            new_tx["location_country"] = loc_data.get("country")
+            new_tx["location_lat"] = loc_data.get("lat")
+            new_tx["location_lng"] = loc_data.get("lng")
+            
+            countries.add(loc_data.get("country"))
+            if loc_data.get("city"):
+                cities.add(loc_data.get("city"))
+        
+        enriched_txs.append(new_tx)
+
+    # 4. Generate Summary
+    if not countries:
+        summary = "No geographic data extracted from descriptions."
+    else:
+        summary = f"Transactions originated from {len(countries)} countries ({', '.join(list(countries)[:3])}) across {len(cities)} cities."
+
+    return enriched_txs, summary

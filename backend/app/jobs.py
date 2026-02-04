@@ -2,7 +2,7 @@
 
 from .parser import extract_transactions
 from .patterns import run_patterns
-from .llm_client import generate_sar
+from .llm_client import generate_sar, enrich_locations
 from .pdf_generator import make_pdf
 from .job_store import JOB_STORE
 
@@ -129,6 +129,11 @@ def process_uploaded_file(job_id: str):
         for i, tx in enumerate(transactions[:5]):
             print(f"TX {i}: {tx['Date']} | {tx['direction']} | {tx['Type']} | {tx['amount']} | {tx['Details']}")
 
+        # 1.5) Enrich with Location Data (LLM)
+        JOB_STORE[job_id]["status"] = "enriching"
+        transactions, location_summary = enrich_locations(transactions)
+        print(f"Location summary: {location_summary}")
+
         # 2) Run rules / patterns
         JOB_STORE[job_id]["status"] = "rules"
         patterns, risk_score = run_patterns(transactions)
@@ -167,9 +172,14 @@ def process_uploaded_file(job_id: str):
             "final_recommendation": final_recommendation,
             "case_summary": case_summary,
             "sar_text": sar_text,
+            "location_summary": location_summary,
             }
         JOB_STORE[job_id]["pdf"] = pdf_path
 
     except Exception as e:
+        import traceback
+        with open("debug_error.log", "w") as f:
+            f.write(str(e) + "\n" + traceback.format_exc())
+            
         JOB_STORE[job_id]["status"] = "error"
         JOB_STORE[job_id]["error"] = str(e)

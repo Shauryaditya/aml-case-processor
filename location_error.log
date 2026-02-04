@@ -1,0 +1,9 @@
+Error: 400 Client Error: Bad Request for url: https://openrouter.ai/api/v1/chat/completions
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\app\llm_client.py", line 271, in enrich_locations
+    resp.raise_for_status()
+  File "C:\Python311\Lib\site-packages\requests\models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://openrouter.ai/api/v1/chat/completions

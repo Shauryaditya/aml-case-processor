@@ -24,6 +24,10 @@ interface Transaction {
   Type?: string;
   amount?: number;
   Details?: string;
+  location_city?: string;
+  location_country?: string;
+  location_lat?: number;
+  location_lng?: number;
 }
 
 interface Pattern {
@@ -46,6 +50,7 @@ interface ProcessingResult {
   final_recommendation: string;
   case_summary: CaseSummary;
   sar_text: string;
+  location_summary?: string;
 }
 
 interface StatusResponse {
@@ -141,7 +146,110 @@ function TransactionTable({ transactions }: { transactions: Transaction[] }) {
   );
 }
 
+// Simplified World Map SVG Path (Mercator-ish)
+const WORLD_MAP_PATH = "M158.4,124.6c-1.3-3.6-4.5-5.9-4.2-7.5c0.3-1.6,3.6-1.5,5.6-2.5c2-1,2.6-3.7,1.9-5.7c-0.7-2-2.9-2.8-5.2-2.1c-2.3,0.7-4.9-0.1-6.7-1.8c-1.8-1.7-2.6-4.4-1.6-6.7c1-2.3,3.7-3.3,6.1-2.9c2.4,0.4,4.2,2.3,5.6,4.5c1.4,2.2,2.6,4.8,4.7,6.3c2.1,1.5,4.9,1.7,7.2,0.4c2.3-1.3,3.6-3.8,4.8-6.2c1.2-2.4,2.2-5,3.9-7.1c1.7-2.1,4.4-3.1,7-3.2c2.6-0.1,5.2,0.8,7.3,2.4c2.1,1.6,3.4,4,4.7,6.3c1.3,2.3,2.7,4.6,4.7,6.3c2,1.7,4.4,2.7,7,2.8c2.6,0.1,5.2-0.8,7.3-2.3c2.1-1.5,3.4-3.9,4.8-6.2c1.4-2.3,2.9-4.5,4.9-6c2-1.5,4.5-2.2,7-2.1c2.5,0.1,5,1.2,6.7,3c1.7,1.8,2.8,4.3,3.3,6.8c0.5,2.5,0.4,5.1-0.5,7.5c-0.9,2.4-2.5,4.5-4.4,6.2c-1.9,1.7-4.2,2.9-6.6,3.6c-2.4,0.7-5,0.8-7.5,0.2c-2.5-0.6-4.8-2-6.6-3.9c-1.8-1.9-2.9-4.3-3.9-6.8c-1-2.5-1.9-5.1-3.6-7c-1.7-1.9-4.2-2.7-6.7-2.6c-2.5,0.1-4.9,1.1-6.7,2.9c-1.8,1.8-2.9,4.2-3.8,6.8c-0.9,2.6-1.7,5.2-3.3,7.3c-1.6,2.1-3.9,3.5-6.5,4c-2.6,0.5-5.3-0.1-7.6-1.4c-2.3-1.3-4.1-3.4-5.3-5.8c-1.2-2.4-1.6-5.1-1.3-7.8c0.3-2.7,1.4-5.2,3-7.4";
+
+function LocationIntelligenceSection({ result }: { result: ProcessingResult }) {
+  if (!result || !result.transactions) return null;
+
+  // Extract valid locations
+  const locations = result.transactions
+    .filter((t) => t.location_lat && t.location_lng)
+    .map((t) => ({
+      city: t.location_city,
+      country: t.location_country,
+      lat: t.location_lat!,
+      lng: t.location_lng!,
+    }));
+
+  const uniqueLocations = Array.from(new Set(locations.map(l => `${l.city}|${l.country}`)))
+    .map(key => {
+      const [city, country] = key.split('|');
+      const loc = locations.find(l => l.city === city && l.country === country);
+      return loc;
+    });
+
+  if (uniqueLocations.length === 0 && !result.location_summary) return null;
+
+  return (
+    <Card className="bg-white shadow-xl border-0 mb-6">
+      <CardHeader className="border-b bg-gradient-to-r from-indigo-50 to-purple-50">
+        <CardTitle className="flex items-center gap-2 text-indigo-900">
+          <TrendingUp className="h-5 w-5 text-indigo-600" />
+          Location Intelligence
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Summary & Metrics */}
+          <div className="md:col-span-1 space-y-4">
+             <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
+                <h4 className="text-sm font-semibold text-indigo-900 mb-2">Geographic Summary</h4>
+                <p className="text-sm text-indigo-800 leading-relaxed">
+                  {result.location_summary || "No specific location patterns detected."}
+                </p>
+             </div>
+             
+             {uniqueLocations.length > 0 && (
+               <div>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Identified Locations</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                    {uniqueLocations.map((loc, i) => (
+                      <div key={i} className="flex justify-between items-center text-sm border-b border-gray-100 pb-1">
+                        <span className="font-medium text-gray-700">{loc?.city}</span>
+                        <span className="text-xs text-gray-500">{loc?.country}</span>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+             )}
+          </div>
+
+          {/* Map Visualization */}
+          <div className="md:col-span-2 bg-gray-50 rounded-xl border border-gray-200 relative overflow-hidden h-64 flex items-center justify-center">
+             {uniqueLocations.length > 0 ? (
+               <div className="relative w-full h-full p-4">
+                  <svg viewBox="0 0 360 180" className="w-full h-full opacity-60">
+                    {/* Background Placeholders for Continents (abstract) */}
+                    <path d="M50 40 L120 40 L130 90 L80 120 Z" fill="#e5e7eb" /> {/* Americas */}
+                    <path d="M160 30 L280 30 L270 90 L180 100 Z" fill="#e5e7eb" /> {/* Eurasia */}
+                    <path d="M170 90 L230 90 L220 140 L180 130 Z" fill="#e5e7eb" /> {/* Africa */}
+                    <rect x="0" y="0" width="360" height="180" fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                  </svg>
+                  
+                  {/* Points */}
+                  {uniqueLocations.map((loc, i) => {
+                     // Simple Equirectangular projection
+                     // lng: -180 to 180 -> x: 0 to 360
+                     // lat: 90 to -90 -> y: 0 to 180
+                     const x = (loc!.lng + 180); 
+                     const y = (90 - loc!.lat); 
+                     return (
+                       <div 
+                         key={i}
+                         className="absolute w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-md transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                         style={{ left: `${(x/360)*100}%`, top: `${(y/180)*100}%` }}
+                         title={`${loc?.city}, ${loc?.country}`}
+                       >
+                         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-10">
+                           {loc?.city}, {loc?.country}
+                         </span>
+                       </div>
+                     );
+                  })}
+               </div>
+             ) : (
+                <div className="text-gray-400 text-sm italic">Map view unavailable (No coordinates found)</div>
+             )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Home() {
+
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -456,6 +564,9 @@ export default function Home() {
               </CardContent>
             </Card>
           )}
+
+          {/* Location Intelligence */}
+          {result && <LocationIntelligenceSection result={result} />}
 
           {/* DETAILED RESULTS */}
           <Card className="bg-white shadow-xl border-0">
