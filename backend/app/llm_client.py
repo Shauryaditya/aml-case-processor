@@ -262,7 +262,7 @@ def enrich_locations(transactions):
     body = {
         "model": "arcee-ai/trinity-large-preview:free", 
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 3000,
+        "max_tokens": 10000,
 #        "response_format": {"type": "json_object"}
     }
     
