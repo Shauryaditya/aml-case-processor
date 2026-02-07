@@ -1,10 +1,18 @@
 # app/jobs.py
 
+import logging
 from .parser import extract_transactions
 from .patterns import run_patterns
 from .llm_client import generate_sar, enrich_locations
 from .pdf_generator import make_pdf
 from .job_store import JOB_STORE
+
+# Configure logging
+logging.basicConfig(
+    filename='job_debug.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 HIGH_RISK_PATTERNS = {
     "STRUCTURING_NEAR_THRESHOLD_CASH",
@@ -117,28 +125,36 @@ def compute_final_recommendation(patterns, risk_score: int) -> str:
 
 
 def process_uploaded_file(job_id: str):
+    logging.info(f"Starting job {job_id}")
     JOB_STORE[job_id]["status"] = "parsing"
     file_path = JOB_STORE[job_id]["file"]
 
     print("JOB STATUS UPDATE:", JOB_STORE[job_id]["status"])
     try:
         # 1) Parse transactions
+        logging.info(f"Job {job_id}: Parsing transactions from {file_path}")
         transactions = extract_transactions(file_path)
 
+        logging.info(f"Job {job_id}: Parsed {len(transactions)} transactions")
         print(f"Parsed {len(transactions)} transactions")
         for i, tx in enumerate(transactions[:5]):
             print(f"TX {i}: {tx['Date']} | {tx['direction']} | {tx['Type']} | {tx['amount']} | {tx['Details']}")
 
         # 1.5) Enrich with Location Data (LLM)
+        logging.info(f"Job {job_id}: Enriching locations")
         JOB_STORE[job_id]["status"] = "enriching"
         transactions, location_summary = enrich_locations(transactions)
+        logging.info(f"Job {job_id}: Location enrichment complete. Summary: {location_summary}")
         print(f"Location summary: {location_summary}")
 
         # 2) Run rules / patterns
+        logging.info(f"Job {job_id}: Running patterns")
         JOB_STORE[job_id]["status"] = "rules"
         patterns, risk_score = run_patterns(transactions)
+        logging.info(f"Job {job_id}: Patterns complete. Risk score: {risk_score}")
 
         # 3) Compute risk band + recommendation
+        logging.info(f"Job {job_id}: Computing risk band and recommendation")
         risk_band = compute_risk_band(risk_score)
         final_recommendation = compute_final_recommendation(patterns, risk_score)
 
@@ -149,6 +165,7 @@ def process_uploaded_file(job_id: str):
         )
 
         # 4) Generate SAR narrative via LLM
+        logging.info(f"Job {job_id}: Generating SAR narrative")
         JOB_STORE[job_id]["status"] = "llm"
         print("Entering LLM stage")
         sar_text = generate_sar(
@@ -158,9 +175,13 @@ def process_uploaded_file(job_id: str):
                           risk_band=risk_band,
                     )
         print("LLM completed")
+        logging.info(f"Job {job_id}: SAR narrative generated")
+        
         # 5) Generate PDF from SAR narrative
+        logging.info(f"Job {job_id}: Generating PDF")
         JOB_STORE[job_id]["status"] = "pdf"
         pdf_path = make_pdf(job_id, sar_text)
+        logging.info(f"Job {job_id}: PDF generated at {pdf_path}")
 
         # 6) Save final result
         JOB_STORE[job_id]["status"] = "done"
@@ -175,11 +196,14 @@ def process_uploaded_file(job_id: str):
             "location_summary": location_summary,
             }
         JOB_STORE[job_id]["pdf"] = pdf_path
+        logging.info(f"Job {job_id}: Job compconsted successfully")
 
     except Exception as e:
         import traceback
+        error_msg = str(e) + "\n" + traceback.format_exc()
+        logging.error(f"Job {job_id} failed: {error_msg}")
         with open("debug_error.log", "w") as f:
-            f.write(str(e) + "\n" + traceback.format_exc())
+            f.write(error_msg)
             
         JOB_STORE[job_id]["status"] = "error"
         JOB_STORE[job_id]["error"] = str(e)

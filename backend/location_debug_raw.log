@@ -1,88 +1,160 @@
 ```json
 {
-  "emily brooks": {
+  "POS Purchase Wm Supercenter Mansfield TX": {
+    "city": "Mansfield",
+    "country": "United States",
+    "lat": 32.5631,
+    "lng": -97.1415
+  },
+  "Debit Card Purchase Ntta Autocharge": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "james walker": {
+  "Recurring Debit Card Apple.com/Bill": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "daniel ross": {
+  "Debit Card Purchase Whataburger 1193": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "kevin thompson": {
+  "POS Purchase Albertsons #30 Arlington TX": {
+    "city": "Arlington",
+    "country": "United States",
+    "lat": 32.7357,
+    "lng": -97.1081
+  },
+  "POS Purchase Qt 1953 Midlothian TX": {
+    "city": "Midlothian",
+    "country": "United States",
+    "lat": 32.4824,
+    "lng": -96.9947
+  },
+  "POS Purchase Wal-Mart Super Mansfield TX": {
+    "city": "Mansfield",
+    "country": "United States",
+    "lat": 32.5631,
+    "lng": -97.1415
+  },
+  "Debit Card Purchase Nathan Christensen PC": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "omega tech group": {
+  "ATM Withdrawal 3101 Matlock Rd Mansfield TX": {
+    "city": "Mansfield",
+    "country": "United States",
+    "lat": 32.5631,
+    "lng": -97.1415
+  },
+  "POS Purchase 7-Eleven Arlington TX": {
+    "city": "Arlington",
+    "country": "United States",
+    "lat": 32.7357,
+    "lng": -97.1081
+  },
+  "POS Purchase Office Depot 0 Arlington TX": {
+    "city": "Arlington",
+    "country": "United States",
+    "lat": 32.7357,
+    "lng": -97.1081
+  },
+  "POS Purchase Costco Gas #06 Arlington TX": {
+    "city": "Arlington",
+    "country": "United States",
+    "lat": 32.7357,
+    "lng": -97.1081
+  },
+  "Debit Card Purchase McDonald's F10485": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "bluestone services": {
+  "POS Purchase Heb Gas/Carwash Mansfield TX": {
+    "city": "Mansfield",
+    "country": "United States",
+    "lat": 32.5631,
+    "lng": -97.1415
+  },
+  "Debit Card Purchase Albertsons #3042": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "apex solutions llc": {
+  "POS Purchase Costco Gas #11 N Fort Worth TX": {
+    "city": "Fort Worth",
+    "country": "United States",
+    "lat": 32.7555,
+    "lng": -97.3308
+  },
+  "Debit Card Purchase Uep*China King Super B": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "michael carter": {
+  "POS Purchase Tom Thumb #178 Grand Prairie TX": {
+    "city": "Grand Prairie",
+    "country": "United States",
+    "lat": 32.7459,
+    "lng": -97.0297
+  },
+  "Debit Card Purchase Burger King #14399": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "north ridge consulting": {
+  "Debit Card Purchase Chipotle 4487 Kennedale": {
+    "city": "Kennedale",
+    "country": "United States",
+    "lat": 32.6487,
+    "lng": -97.2224
+  },
+  "Debit Card Purchase Exxon Westchester Corn": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "vertex trading llc": {
+  "POS Purchase Ali Auto Servi Arlington TX": {
+    "city": "Arlington",
+    "country": "United States",
+    "lat": 32.7357,
+    "lng": -97.1081
+  },
+  "Debit Card Purchase Swing By Sublett": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "sarah nguyen": {
-    "city": null,
-    "country": null,
-    "lat": null,
-    "lng": null
+  "POS Purchase Kroger Fuel #1 Keller TX": {
+    "city": "Keller",
+    "country": "United States",
+    "lat": 32.9337,
+    "lng": -97.2255
   },
-  "unknown sender": {
-    "city": null,
-    "country": null,
-    "lat": null,
-    "lng": null
+  "POS Purchase Wal-Mart #3284 Arlington TX": {
+    "city": "Arlington",
+    "country": "United States",
+    "lat": 32.7357,
+    "lng": -97.1081
   },
-  "laura martinez": {
-    "city": null,
-    "country": null,
-    "lat": null,
-    "lng": null
-  },
-  "summit logistics": {
-    "city": null,
-    "country": null,
-    "lat": null,
-    "lng": null
+  "POS Purchase Costco Whse #1 Fort Worth TX": {
+    "city": "Fort Worth",
+    "country": "United States",
+    "lat": 32.7555,
+    "lng": -97.3308
   }
 }
 ```

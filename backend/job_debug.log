@@ -1,0 +1,42 @@
+2026-02-08 01:02:10,387 - INFO - Starting job 02727953-7b3f-467c-a7de-3115d005cfc5
+2026-02-08 01:02:10,388 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Parsing transactions from C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\uploads\4df1fc66-cae8-4fa8-964f-973610dc3a7e_virtual_wallet_transactions.csv
+2026-02-08 01:02:10,390 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Parsed 35 transactions
+2026-02-08 01:02:10,390 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Enriching locations
+2026-02-08 01:02:10,391 - INFO - Sending 26 descriptions for location enrichment...
+2026-02-08 01:02:45,994 - INFO - Location enrichment successful. Mapped 26 locations.
+2026-02-08 01:02:46,001 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Location enrichment complete. Summary: Transactions originated from 1 countries (United States) across 7 cities.
+2026-02-08 01:02:46,002 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Running patterns
+2026-02-08 01:02:46,040 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Patterns complete. Risk score: 1
+2026-02-08 01:02:46,042 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Computing risk band and recommendation
+2026-02-08 01:02:46,042 - INFO - Job 02727953-7b3f-467c-a7de-3115d005cfc5: Generating SAR narrative
+2026-02-08 01:02:46,042 - INFO - Sending request to OpenRouter for SAR generation
+2026-02-08 01:04:08,631 - INFO - Starting job 8e777b98-bce5-49c2-93bd-423b67896296
+2026-02-08 01:04:08,631 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Parsing transactions from C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\uploads\4df1fc66-cae8-4fa8-964f-973610dc3a7e_virtual_wallet_transactions.csv
+2026-02-08 01:04:08,632 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Parsed 35 transactions
+2026-02-08 01:04:08,633 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Enriching locations
+2026-02-08 01:04:08,634 - INFO - Sending 26 descriptions for location enrichment...
+2026-02-08 01:04:35,448 - INFO - Location enrichment successful. Mapped 26 locations.
+2026-02-08 01:04:35,451 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Location enrichment complete. Summary: Transactions originated from 1 countries (United States) across 7 cities.
+2026-02-08 01:04:35,453 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Running patterns
+2026-02-08 01:04:35,483 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Patterns complete. Risk score: 1
+2026-02-08 01:04:35,484 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Computing risk band and recommendation
+2026-02-08 01:04:35,484 - INFO - Job 8e777b98-bce5-49c2-93bd-423b67896296: Generating SAR narrative
+2026-02-08 01:04:35,484 - INFO - Sending request to OpenRouter for SAR generation (timeout=20s)
+2026-02-08 01:05:53,320 - INFO - Starting job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b
+2026-02-08 01:05:53,320 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Parsing transactions from C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\uploads\4df1fc66-cae8-4fa8-964f-973610dc3a7e_virtual_wallet_transactions.csv
+2026-02-08 01:05:53,322 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Parsed 35 transactions
+2026-02-08 01:05:53,323 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Enriching locations
+2026-02-08 01:05:53,324 - INFO - Sending 26 descriptions for location enrichment...
+2026-02-08 01:06:26,232 - INFO - Location enrichment successful. Mapped 26 locations.
+2026-02-08 01:06:26,240 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Location enrichment complete. Summary: Transactions originated from 1 countries (United States) across 7 cities.
+2026-02-08 01:06:26,241 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Running patterns
+2026-02-08 01:06:26,290 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Patterns complete. Risk score: 1
+2026-02-08 01:06:26,290 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Computing risk band and recommendation
+2026-02-08 01:06:26,290 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Generating SAR narrative
+2026-02-08 01:06:26,290 - INFO - Sending request to OpenRouter for SAR generation (timeout=20s)
+2026-02-08 01:06:26,773 - ERROR - SAR generation failed: 400 Client Error: Bad Request for url: https://openrouter.ai/api/v1/chat/completions. Using fallback.
+2026-02-08 01:06:26,773 - INFO - Using fallback SAR generation
+2026-02-08 01:06:26,777 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: SAR narrative generated
+2026-02-08 01:06:26,777 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Generating PDF
+2026-02-08 01:06:26,787 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: PDF generated at C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\reports\sar_29e9468a-ae82-4be5-ad39-2f7ac8d9f16b.pdf
+2026-02-08 01:06:26,788 - INFO - Job 29e9468a-ae82-4be5-ad39-2f7ac8d9f16b: Job compconsted successfully

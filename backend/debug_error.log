@@ -1,15 +1,9 @@
-'NoneType' object has no attribute 'upper'
+'choices'
 Traceback (most recent call last):
   File "C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\app\jobs.py", line 154, in process_uploaded_file
     sar_text = generate_sar(
                ^^^^^^^^^^^^^
-  File "C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\app\llm_client.py", line 171, in generate_sar
-    return _fallback_sar(transactions, patterns, risk_score, risk_band)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\app\llm_client.py", line 120, in _fallback_sar
-    lines.append(f"- {format_tx_for_sar(tx)}")
-                      ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\app\llm_client.py", line 68, in format_tx_for_sar
-    channel = tx.get("Type", "unknown").upper()
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'upper'
+  File "C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\app\llm_client.py", line 207, in generate_sar
+    return data["choices"][0]["message"]["content"]
+           ~~~~^^^^^^^^^^^
+KeyError: 'choices'

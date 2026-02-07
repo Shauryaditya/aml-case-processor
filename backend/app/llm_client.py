@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import logging
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -72,7 +73,13 @@ risk_band: {risk_band}
 
 def format_tx_for_sar(tx: dict) -> str:
     date = tx.get("Date", "Unknown date")
-    channel = (tx.get("Type") or "unknown").upper()
+    # Ensure safe access for Type as it can be None
+    channel = (tx.get("Type") or "unknown")
+    if channel:
+        channel = channel.upper()
+    else:
+        channel = "UNKNOWN"
+        
     details = tx.get("Details", "no description")
 
     amount = tx.get("amount")
@@ -102,6 +109,7 @@ def _fallback_sar(transactions, patterns, risk_score=None, risk_band=None):
     Used when LLM is unavailable or returns error.
     Still follows the required 1–5 structure in a simple deterministic way.
     """
+    logging.info("Using fallback SAR generation")
     tx_sample = transactions[:5] if transactions else []
     pattern_codes = [p.get("code") for p in patterns or [] if p.get("code")]
 
@@ -175,6 +183,7 @@ def generate_sar(transactions, patterns, risk_score=None, risk_band=None):
     """
     # If no key configured, immediately fallback
     if not OPENROUTER_KEY:
+        logging.warning("OPENROUTER_KEY not set, using fallback SAR")
         return _fallback_sar(transactions, patterns, risk_score, risk_band)
 
     tx_for_prompt = transactions[:100] if transactions else []
@@ -193,7 +202,7 @@ def generate_sar(transactions, patterns, risk_score=None, risk_band=None):
     }
 
     body = {
-        "model": "deepseek/deepseek-r1-0528:free",  # TODO: set your actual model id
+        "model": "google/gemini-2.0-flash-lite-preview-02-05:free",
         "messages": [
             {"role": "user", "content": prompt}
         ],
@@ -201,12 +210,18 @@ def generate_sar(transactions, patterns, risk_score=None, risk_band=None):
     }
 
     try:
-        resp = requests.post(OPENROUTER_URL, headers=headers, json=body, timeout=30)
+        logging.info("Sending request to OpenRouter for SAR generation (timeout=20s)")
+        resp = requests.post(OPENROUTER_URL, headers=headers, json=body, timeout=20)
         resp.raise_for_status()
         data = resp.json()
+        logging.info("SAR generation successful")
         return data["choices"][0]["message"]["content"]
-    except requests.RequestException:
+    except requests.Timeout:
+        logging.error("SAR generation timed out after 20s. Using fallback.")
+        return _fallback_sar(transactions, patterns, risk_score, risk_band)
+    except requests.RequestException as e:
         # On any network/auth/model error: do NOT kill the job
+        logging.error(f"SAR generation failed: {e}. Using fallback.")
         return _fallback_sar(transactions, patterns, risk_score, risk_band)
 
 
@@ -239,6 +254,7 @@ def enrich_locations(transactions):
     """
     if not OPENROUTER_KEY or not transactions:
         print("Skipping location enrichment: No API key or transactions")
+        logging.warning("Skipping location enrichment: No API key or transactions")
         return transactions, "Location analysis unavailable (LLM key missing)."
 
     # 1. Deduplicate descriptions to save tokens
@@ -247,6 +263,7 @@ def enrich_locations(transactions):
     unique_details = [d for d in unique_details if len(d) > 3][:30] # Limit to 30 unique descriptions to prevent truncation
 
     if not unique_details:
+        logging.info("No unique details found for location enrichment")
         return transactions, "No identifiable locations found."
 
     # 2. Call LLM
@@ -269,11 +286,13 @@ def enrich_locations(transactions):
     location_map = {}
     try:
         print(f"Sending {len(unique_details)} descriptions for location enrichment...")
+        logging.info(f"Sending {len(unique_details)} descriptions for location enrichment...")
         resp = requests.post(OPENROUTER_URL, headers=headers, json=body, timeout=45)
         
         if not resp.ok:
             error_details = resp.text
             print(f"LLM API Error: {resp.status_code} - {error_details}")
+            logging.error(f"LLM API Error: {resp.status_code} - {error_details}")
             raise Exception(f"API Error {resp.status_code}: {error_details}")
 
         content = resp.json()["choices"][0]["message"]["content"]
@@ -302,6 +321,7 @@ def enrich_locations(transactions):
             
         location_map = json.loads(content)
         print(f"Location enrichment successful. Mapped {len(location_map)} locations.")
+        logging.info(f"Location enrichment successful. Mapped {len(location_map)} locations.")
         
     except Exception as e:
         import traceback
@@ -309,6 +329,7 @@ def enrich_locations(transactions):
             f.write(f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}")
             
         print(f"Location enrichment failed: {e}")
+        logging.error(f"Location enrichment failed: {e}")
         return transactions, "Location analysis failed due to service error."
 
     # 3. Merge back into transactions
