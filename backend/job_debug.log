@@ -76,3 +76,23 @@
 2026-02-14 11:06:23,544 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Generating PDF
 2026-02-14 11:06:23,566 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: PDF generated at C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\reports\sar_c0694f8e-fb11-4d2d-ad5c-65c92432d059.pdf
 2026-02-14 11:06:23,567 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Job compconsted successfully
+2026-02-14 11:16:51,427 - INFO - Starting job a84d1a5b-2836-474f-8ce2-e2961bf05efa
+2026-02-14 11:16:51,428 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Parsing transactions from C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\uploads\a84d1a5b-2836-474f-8ce2-e2961bf05efa_virtual_wallet_transactions.csv
+2026-02-14 11:16:51,443 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Parsed 35 transactions
+2026-02-14 11:16:51,445 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Enriching locations
+2026-02-14 11:16:51,446 - INFO - Sending 26 descriptions for location enrichment...
+2026-02-14 11:17:15,076 - INFO - Location enrichment successful. Mapped 26 locations.
+2026-02-14 11:17:15,083 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Location enrichment complete. Summary: Transactions originated from 1 countries (United States) across 7 cities.
+2026-02-14 11:17:15,085 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Running patterns
+2026-02-14 11:17:15,168 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Patterns complete. Risk score: 1
+2026-02-14 11:17:15,168 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Computing risk band and recommendation
+2026-02-14 11:17:15,168 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Generating SAR narrative
+2026-02-14 11:17:15,169 - INFO - Sending request to OpenRouter for SAR generation (timeout=20s)
+2026-02-14 11:17:16,773 - ERROR - SAR generation failed: 400 Client Error: Bad Request for url: https://openrouter.ai/api/v1/chat/completions. Using fallback.
+2026-02-14 11:17:16,774 - INFO - Using fallback SAR generation
+2026-02-14 11:17:16,780 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: SAR narrative generated
+2026-02-14 11:17:16,781 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Generating PDF
+2026-02-14 11:17:16,826 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: PDF generated at C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\reports\sar_a84d1a5b-2836-474f-8ce2-e2961bf05efa.pdf
+2026-02-14 11:17:16,830 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Generating Audio
+2026-02-14 11:17:38,087 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Audio generated at C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\uploads\a84d1a5b-2836-474f-8ce2-e2961bf05efa_sar.mp3
+2026-02-14 11:17:38,087 - INFO - Job a84d1a5b-2836-474f-8ce2-e2961bf05efa: Job compconsted successfully
