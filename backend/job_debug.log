@@ -58,3 +58,21 @@
 2026-02-08 01:08:31,076 - INFO - Job 500e5192-fe97-4f30-b6bc-f867278e0ec9: Generating PDF
 2026-02-08 01:08:31,088 - INFO - Job 500e5192-fe97-4f30-b6bc-f867278e0ec9: PDF generated at C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\reports\sar_500e5192-fe97-4f30-b6bc-f867278e0ec9.pdf
 2026-02-08 01:08:31,088 - INFO - Job 500e5192-fe97-4f30-b6bc-f867278e0ec9: Job compconsted successfully
+2026-02-14 11:05:41,005 - INFO - Starting job c0694f8e-fb11-4d2d-ad5c-65c92432d059
+2026-02-14 11:05:41,008 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Parsing transactions from C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\uploads\c0694f8e-fb11-4d2d-ad5c-65c92432d059_virtual_wallet_transactions.csv
+2026-02-14 11:05:41,073 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Parsed 35 transactions
+2026-02-14 11:05:41,076 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Enriching locations
+2026-02-14 11:05:41,077 - INFO - Sending 26 descriptions for location enrichment...
+2026-02-14 11:06:20,491 - INFO - Location enrichment successful. Mapped 26 locations.
+2026-02-14 11:06:20,499 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Location enrichment complete. Summary: Transactions originated from 1 countries (United States) across 7 cities.
+2026-02-14 11:06:20,503 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Running patterns
+2026-02-14 11:06:20,662 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Patterns complete. Risk score: 1
+2026-02-14 11:06:20,663 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Computing risk band and recommendation
+2026-02-14 11:06:20,663 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Generating SAR narrative
+2026-02-14 11:06:20,665 - INFO - Sending request to OpenRouter for SAR generation (timeout=20s)
+2026-02-14 11:06:23,539 - ERROR - SAR generation failed: 400 Client Error: Bad Request for url: https://openrouter.ai/api/v1/chat/completions. Using fallback.
+2026-02-14 11:06:23,539 - INFO - Using fallback SAR generation
+2026-02-14 11:06:23,544 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: SAR narrative generated
+2026-02-14 11:06:23,544 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Generating PDF
+2026-02-14 11:06:23,566 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: PDF generated at C:\Users\shaur\OneDrive\Desktop\aml-case-processor\backend\reports\sar_c0694f8e-fb11-4d2d-ad5c-65c92432d059.pdf
+2026-02-14 11:06:23,567 - INFO - Job c0694f8e-fb11-4d2d-ad5c-65c92432d059: Job compconsted successfully

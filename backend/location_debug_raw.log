@@ -1,10 +1,16 @@
 ```json
 {
-  "POS Purchase Wm Supercenter Mansfield TX": {
+  "ATM Withdrawal 3101 Matlock Rd Mansfield TX": {
     "city": "Mansfield",
     "country": "United States",
     "lat": 32.5631,
-    "lng": -97.1415
+    "lng": -97.1414
+  },
+  "POS Purchase Costco Whse #1 Fort Worth TX": {
+    "city": "Fort Worth",
+    "country": "United States",
+    "lat": 32.7555,
+    "lng": -97.3308
   },
   "Debit Card Purchase Ntta Autocharge": {
     "city": null,
@@ -12,67 +18,37 @@
     "lat": null,
     "lng": null
   },
-  "Recurring Debit Card Apple.com/Bill": {
+  "Debit Card Purchase Uep*China King Super B": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
   },
-  "Debit Card Purchase Whataburger 1193": {
+  "POS Purchase Kroger Fuel #1 Keller TX": {
+    "city": "Keller",
+    "country": "United States",
+    "lat": 32.9347,
+    "lng": -97.2254
+  },
+  "Debit Card Purchase Albertsons #3042": {
     "city": null,
     "country": null,
     "lat": null,
     "lng": null
-  },
-  "POS Purchase Albertsons #30 Arlington TX": {
-    "city": "Arlington",
-    "country": "United States",
-    "lat": 32.7357,
-    "lng": -97.1081
-  },
-  "POS Purchase Qt 1953 Midlothian TX": {
-    "city": "Midlothian",
-    "country": "United States",
-    "lat": 32.4824,
-    "lng": -96.9947
-  },
-  "POS Purchase Wal-Mart Super Mansfield TX": {
-    "city": "Mansfield",
-    "country": "United States",
-    "lat": 32.5631,
-    "lng": -97.1415
-  },
-  "Debit Card Purchase Nathan Christensen PC": {
-    "city": null,
-    "country": null,
-    "lat": null,
-    "lng": null
-  },
-  "ATM Withdrawal 3101 Matlock Rd Mansfield TX": {
-    "city": "Mansfield",
-    "country": "United States",
-    "lat": 32.5631,
-    "lng": -97.1415
-  },
-  "POS Purchase 7-Eleven Arlington TX": {
-    "city": "Arlington",
-    "country": "United States",
-    "lat": 32.7357,
-    "lng": -97.1081
   },
   "POS Purchase Office Depot 0 Arlington TX": {
     "city": "Arlington",
     "country": "United States",
     "lat": 32.7357,
-    "lng": -97.1081
+    "lng": -97.1080
   },
-  "POS Purchase Costco Gas #06 Arlington TX": {
-    "city": "Arlington",
+  "POS Purchase Tom Thumb #178 Grand Prairie TX": {
+    "city": "Grand Prairie",
     "country": "United States",
-    "lat": 32.7357,
-    "lng": -97.1081
+    "lat": 32.7460,
+    "lng": -96.9978
   },
-  "Debit Card Purchase McDonald's F10485": {
+  "Debit Card Purchase Whataburger 1193": {
     "city": null,
     "country": null,
     "lat": null,
@@ -82,13 +58,7 @@
     "city": "Mansfield",
     "country": "United States",
     "lat": 32.5631,
-    "lng": -97.1415
-  },
-  "Debit Card Purchase Albertsons #3042": {
-    "city": null,
-    "country": null,
-    "lat": null,
-    "lng": null
+    "lng": -97.1414
   },
   "POS Purchase Costco Gas #11 N Fort Worth TX": {
     "city": "Fort Worth",
@@ -96,17 +66,29 @@
     "lat": 32.7555,
     "lng": -97.3308
   },
-  "Debit Card Purchase Uep*China King Super B": {
-    "city": null,
-    "country": null,
-    "lat": null,
-    "lng": null
-  },
-  "POS Purchase Tom Thumb #178 Grand Prairie TX": {
-    "city": "Grand Prairie",
+  "POS Purchase Costco Gas #06 Arlington TX": {
+    "city": "Arlington",
     "country": "United States",
-    "lat": 32.7459,
-    "lng": -97.0297
+    "lat": 32.7357,
+    "lng": -97.1080
+  },
+  "POS Purchase 7-Eleven Arlington TX": {
+    "city": "Arlington",
+    "country": "United States",
+    "lat": 32.7357,
+    "lng": -97.1080
+  },
+  "POS Purchase Wm Supercenter Mansfield TX": {
+    "city": "Mansfield",
+    "country": "United States",
+    "lat": 32.5631,
+    "lng": -97.1414
+  },
+  "POS Purchase Wal-Mart Super Mansfield TX": {
+    "city": "Mansfield",
+    "country": "United States",
+    "lat": 32.5631,
+    "lng": -97.1414
   },
   "Debit Card Purchase Burger King #14399": {
     "city": null,
@@ -114,11 +96,17 @@
     "lat": null,
     "lng": null
   },
-  "Debit Card Purchase Chipotle 4487 Kennedale": {
-    "city": "Kennedale",
+  "Debit Card Purchase McDonald's F10485": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "POS Purchase Qt 1953 Midlothian TX": {
+    "city": "Midlothian",
     "country": "United States",
-    "lat": 32.6487,
-    "lng": -97.2224
+    "lat": 32.4822,
+    "lng": -96.9950
   },
   "Debit Card Purchase Exxon Westchester Corn": {
     "city": null,
@@ -130,7 +118,25 @@
     "city": "Arlington",
     "country": "United States",
     "lat": 32.7357,
-    "lng": -97.1081
+    "lng": -97.1080
+  },
+  "Recurring Debit Card Apple.com/Bill": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "Debit Card Purchase Nathan Christensen PC": {
+    "city": null,
+    "country": null,
+    "lat": null,
+    "lng": null
+  },
+  "Debit Card Purchase Chipotle 4487 Kennedale": {
+    "city": "Kennedale",
+    "country": "United States",
+    "lat": 32.6479,
+    "lng": -97.2225
   },
   "Debit Card Purchase Swing By Sublett": {
     "city": null,
@@ -138,23 +144,17 @@
     "lat": null,
     "lng": null
   },
-  "POS Purchase Kroger Fuel #1 Keller TX": {
-    "city": "Keller",
-    "country": "United States",
-    "lat": 32.9337,
-    "lng": -97.2255
-  },
   "POS Purchase Wal-Mart #3284 Arlington TX": {
     "city": "Arlington",
     "country": "United States",
     "lat": 32.7357,
-    "lng": -97.1081
+    "lng": -97.1080
   },
-  "POS Purchase Costco Whse #1 Fort Worth TX": {
-    "city": "Fort Worth",
+  "POS Purchase Albertsons #30 Arlington TX": {
+    "city": "Arlington",
     "country": "United States",
-    "lat": 32.7555,
-    "lng": -97.3308
+    "lat": 32.7357,
+    "lng": -97.1080
   }
 }
 ```

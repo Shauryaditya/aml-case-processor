@@ -6,6 +6,8 @@ from .patterns import run_patterns
 from .llm_client import generate_sar, enrich_locations
 from .pdf_generator import make_pdf
 from .job_store import JOB_STORE
+from gtts import gTTS
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -183,6 +185,23 @@ def process_uploaded_file(job_id: str):
         pdf_path = make_pdf(job_id, sar_text)
         logging.info(f"Job {job_id}: PDF generated at {pdf_path}")
 
+        # 5.5) Generate Audio from SAR narrative
+        logging.info(f"Job {job_id}: Generating Audio")
+        JOB_STORE[job_id]["status"] = "audio"
+        
+        # Create audio path: backend/uploads/{job_id}_sar.mp3
+        audio_filename = f"{job_id}_sar.mp3"
+        # We need UPLOAD_DIR. Ideally it should be imported or derived. 
+        # Using file_path.parent since file_path is already a Path object from extract_transactions call or similar?
+        # Actually JOB_STORE[job_id]["file"] is a string. Let's make it a Path.
+        file_path_obj = Path(file_path)
+        upload_dir = file_path_obj.parent
+        audio_path = upload_dir / audio_filename
+        
+        tts = gTTS(text=sar_text, lang='en')
+        tts.save(str(audio_path))
+        logging.info(f"Job {job_id}: Audio generated at {audio_path}")
+
         # 6) Save final result
         JOB_STORE[job_id]["status"] = "done"
         JOB_STORE[job_id]["result"] = {
@@ -196,6 +215,7 @@ def process_uploaded_file(job_id: str):
             "location_summary": location_summary,
             }
         JOB_STORE[job_id]["pdf"] = pdf_path
+        JOB_STORE[job_id]["audio"] = str(audio_path)
         logging.info(f"Job {job_id}: Job compconsted successfully")
 
     except Exception as e:

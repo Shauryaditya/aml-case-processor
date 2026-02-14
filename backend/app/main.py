@@ -73,3 +73,19 @@ def download(job_id: str):
     if not pdf_path:
         return JSONResponse({"error":"no_pdf"}, status_code=400)
     return FileResponse(pdf_path, media_type="application/pdf", filename=f"sar_{job_id}.pdf")
+
+@app.get("/api/audio/{job_id}")
+def get_audio(job_id: str):
+    job = JOB_STORE.get(job_id)
+    if not job:
+        return JSONResponse({"error":"not_found"}, status_code=404)
+    
+    audio_path = job.get("audio")
+    if not audio_path:
+        return JSONResponse({"error":"no_audio"}, status_code=400)
+    
+    path_obj = Path(audio_path)
+    if not path_obj.exists():
+         return JSONResponse({"error":"file_missing"}, status_code=404)
+
+    return FileResponse(path_obj, media_type="audio/mpeg", filename=f"sar_{job_id}.mp3")

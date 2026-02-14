@@ -30,3 +30,4 @@ dramatiq
 
 # HTTP (if calling external APIs / LLMs)
 requests
+gTTS

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, JSX } from "react";
+import { useState, JSX, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
   Copy,
   FileText,
   TrendingUp,
+  Volume2,
+  Pause,
 } from "lucide-react";
 import IndicatorBadgesDemo from "./components/IndicatorBadgeDemo";
 import { IndicatorBadge } from "./components/IndicatorBadge";
@@ -255,9 +257,39 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
+  
+  // Audio Player State
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const backendUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
+  const toggleAudio = () => {
+    if (!jobId) {
+        alert("No analysis available to play.");
+        return;
+    }
+    if (!audioRef.current || audioRef.current.src.indexOf(jobId) === -1) {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+        }
+        audioRef.current = new Audio(`${backendUrl}/api/audio/${jobId}`);
+        audioRef.current.onended = () => setIsPlaying(false);
+        audioRef.current.onerror = () => {
+            alert("Audio not available yet. Please try again in a moment.");
+            setIsPlaying(false);
+        };
+    }
+
+    if (isPlaying) {
+        audioRef.current.pause();
+    } else {
+        audioRef.current.play().catch(e => console.error("Could not play audio:", e));
+    }
+    setIsPlaying(!isPlaying);
+  };
 
   async function processCase(): Promise<void> {
     if (!file) return;
@@ -392,6 +424,7 @@ export default function Home() {
         <p className="text-sm text-gray-500 mt-2">
           Supports CSV, XLSX, PDF • Secure & Private
         </p>
+
       </div>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -671,6 +704,15 @@ export default function Home() {
                       >
                         <Download className="mr-2 h-4 w-4" />
                         Download PDF
+                      </Button>
+
+                      <Button 
+                          onClick={toggleAudio}
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                          disabled={!jobId}
+                      >
+                          {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Volume2 className="mr-2 h-4 w-4" />}
+                          {isPlaying ? "Pause SAR Analysis" : "Play SAR Analysis"}
                       </Button>
                     </div>
                   </div>
